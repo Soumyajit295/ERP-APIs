@@ -42,4 +42,37 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
             this.logger.log('Database connection pool failed')
         }
     }
+
+    async query(text: string,params?: any[]): Promise<QueryResult> {
+        const start = Date.now()
+        try {
+            const result = await this.pool.query(text,params)
+            const duration = Date.now() - start
+            this.logger.log(`Executed query in ${duration}ms : ${text}`)
+            return result
+        } catch (error) {
+            this.logger.error(`Query failed : ${text}`,error)
+            throw error
+        }
+    }
+
+    async getClient(): Promise<PoolClient>{
+        return this.pool.connect()
+    }
+
+    async transaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
+        const client = await this.getClient();
+        try {
+            await client.query('BEGIN');
+            const result = await callback(client);
+            await client.query('COMMIT');
+            return result;
+        } catch (error) {
+            await client.query('ROLLBACK');
+        throw error;
+        } finally {
+            client.release();
+        }
+    }
+
 }

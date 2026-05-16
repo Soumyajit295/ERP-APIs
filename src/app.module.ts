@@ -6,6 +6,8 @@ import { DatabaseService } from './database/database.service';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersRepository } from './repositories/user.repository';
+import { TenantRepository } from './repositories/tenant.repository';
 
 @Module({
   imports: [
@@ -18,6 +20,6 @@ import { AuthModule } from './modules/auth/auth.module';
     AuthModule
   ],
   controllers: [AppController],
-  providers: [AppService, DatabaseService],
+  providers: [AppService, DatabaseService, UsersRepository,TenantRepository],
 })
 export class AppModule {}

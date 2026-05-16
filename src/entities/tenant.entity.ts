@@ -1,8 +1,6 @@
 export class Tenant {
     id!: string;
-    company_name!: string;
-    company_email!: string;
-    phone!: string | null;
+    companyName!: string;
     city!: string | null;
     is_active!: boolean;
     created_at!: Date;
