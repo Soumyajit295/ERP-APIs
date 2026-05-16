@@ -11,10 +11,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
     async onModuleInit(){
         const host = this.configService.get<string>('DATABASE_HOST','localhost')
-        const port = this.configService.get<number>('DATBASE_PORT',5432)
+        const port = this.configService.get<number>('DATABASE_PORT',5432)
         const user = this.configService.get<string>('DATABASE_USER','postgres')
         const database = this.configService.get<string>('DATABASE_NAME','erp_database')
-        const password = this.configService.get<string>('DATABSE_PASSWORD')
+        const password = this.configService.get<string>('DATABASE_PASSWORD')
 
         this.pool = new Pool({
             host,
