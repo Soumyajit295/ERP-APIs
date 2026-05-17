@@ -88,5 +88,9 @@ export class AuthService {
             }
             throw new InternalServerErrorException('Unable to refresh the token')
         }
-    }   
+    }  
+    
+    public async logout(token: string){
+        return await this.refreshTokensRepository.logout(token)
+    }
 }

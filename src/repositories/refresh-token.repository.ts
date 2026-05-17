@@ -58,6 +58,19 @@ export class RefreshTokensRepository {
         }
     }
 
+    async logout(token: string){
+        const query = `
+            UPDATE users_refresh_tokens
+            SET revoked = true
+            WHERE refresh_token = $1
+        `;
+        try {
+            await this.databaseService.query(query,[token])
+        } catch (error) {
+            throw new InternalServerErrorException('Unable to logout the user')
+        }
+    }
+
     async serachByRefreshToken(refreshToken: string){
         const query = `
             SELECT * FROM users_refresh_tokens

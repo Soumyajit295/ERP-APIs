@@ -44,6 +44,18 @@ export class AuthController {
     return {accessToken}
   }
 
+  @Post('logout')
+  public async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response
+  ){
+    const refresh_token = req.cookies?.['refresh_token']
+    if(!refresh_token){
+        return {message: 'User already logged out'}
+    }
+    return await this.authService.logout(refresh_token)
+  }
+
   private setRefreshTokenCookie(
     res: Response,
     refreshToken: string
