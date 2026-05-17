@@ -18,4 +18,8 @@ export class UsersService {
     public async getPasswordById(userId: string){
         return await this.usersRepository.getPasswordById(userId)
     }
+
+    public async getUserById(userId: string){
+        return await this.usersRepository.findById(userId)
+    }
 }

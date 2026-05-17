@@ -87,6 +87,14 @@ export class UsersRepository{
         return this.mapRowToUser(result.rows[0])
     }
 
+    async findById(userId: string){
+        const query = `
+            SELECT * FROM users WHERE id = $1
+        `;
+        const result = await this.databaseService.query(query,[userId])
+        return this.mapRowToUser(result.rows[0])
+    }
+
     async getPasswordById(userId: string) {
         const query = `
          SELECT password_hash FROM USERS WHERE id = $1 AND deleted_at IS NULL;
