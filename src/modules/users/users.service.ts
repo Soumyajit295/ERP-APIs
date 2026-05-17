@@ -10,4 +10,12 @@ export class UsersService {
     public async register(registerDto: RegisterDto){
         return await this.usersRepository.register(registerDto)
     }
+
+    public async findByEmail(email: string){
+        return await this.usersRepository.findByEmail(email)
+    }
+
+    public async getPasswordById(userId: string){
+        return await this.usersRepository.getPasswordById(userId)
+    }
 }

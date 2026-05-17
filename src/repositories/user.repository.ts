@@ -87,6 +87,16 @@ export class UsersRepository{
         return this.mapRowToUser(result.rows[0])
     }
 
+    async getPasswordById(userId: string) {
+        const query = `
+         SELECT password_hash FROM USERS WHERE id = $1 AND deleted_at IS NULL;
+        `
+        const result = await this.databaseService.query(query,[userId])
+        if(result.rows.length === 0) return null
+
+        return result.rows[0].password_hash
+    }
+
     private mapRowToUser(row: any): User{
         return{
             id: row.id,

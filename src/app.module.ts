@@ -8,6 +8,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersRepository } from './repositories/user.repository';
 import { TenantRepository } from './repositories/tenant.repository';
+import { RefreshTokensRepository } from './repositories/refresh-token.repository';
 
 @Module({
   imports: [
@@ -20,6 +21,6 @@ import { TenantRepository } from './repositories/tenant.repository';
     AuthModule
   ],
   controllers: [AppController],
-  providers: [AppService, DatabaseService, UsersRepository,TenantRepository],
+  providers: [AppService, DatabaseService, UsersRepository,TenantRepository,RefreshTokensRepository],
 })
 export class AppModule {}

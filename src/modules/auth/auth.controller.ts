@@ -1,14 +1,45 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {Body, Controller, Post, Res} from '@nestjs/common';
+import type { Response } from 'express';
 import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
+import { parseMaxAge } from 'src/common/utils/calculateExpiry.util';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
-    constructor(
-        private readonly authService: AuthService
-    ){}
-    @Post('register')
-    public async register(@Body() registerDto: RegisterDto){
-        return this.authService.register(registerDto)
-    }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService
+  ) {}
+
+  @Post('register')
+  public async register(
+    @Body() registerDto: RegisterDto
+  ) {
+    return this.authService.register(registerDto);
+  }
+
+  @Post('login')
+  public async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const { accessToken, refreshToken } = await this.authService.login(loginDto);
+    this.setRefreshTokenCookie(res, refreshToken);
+    return {accessToken};
+  }
+
+  private setRefreshTokenCookie(
+    res: Response,
+    refreshToken: string
+  ) {
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: parseMaxAge(this.configService.get<string>('REFRESH_TOKEN_TTL')!)
+    });
+  }
 }
