@@ -11,6 +11,7 @@ import { TenantRepository } from './repositories/tenant.repository';
 import { RefreshTokensRepository } from './repositories/refresh-token.repository';
 import { QueueModule } from './modules/queue/queue.module';
 import { EmailModule } from './modules/email/email.module';
+import { RedisModule } from './modules/redis/redis.module';
 
 @Module({
   imports: [
@@ -22,7 +23,8 @@ import { EmailModule } from './modules/email/email.module';
     UsersModule,
     AuthModule,
     QueueModule,
-    EmailModule
+    EmailModule,
+    RedisModule
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseService, UsersRepository,TenantRepository,RefreshTokensRepository],
