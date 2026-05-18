@@ -9,6 +9,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersRepository } from './repositories/user.repository';
 import { TenantRepository } from './repositories/tenant.repository';
 import { RefreshTokensRepository } from './repositories/refresh-token.repository';
+import { QueueModule } from './modules/queue/queue.module';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
   imports: [
@@ -18,7 +20,9 @@ import { RefreshTokensRepository } from './repositories/refresh-token.repository
     }),
     TenantsModule,
     UsersModule,
-    AuthModule
+    AuthModule,
+    QueueModule,
+    EmailModule
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseService, UsersRepository,TenantRepository,RefreshTokensRepository],
