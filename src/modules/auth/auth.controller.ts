@@ -5,6 +5,8 @@ import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
 import { parseMaxAge } from 'src/common/utils/calculateExpiry.util';
 import { ConfigService } from '@nestjs/config';
+import { GenerateResetLinkDto } from './dto/generate-resetlink.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -54,6 +56,20 @@ export class AuthController {
         return {message: 'User already logged out'}
     }
     return await this.authService.logout(refresh_token)
+  }
+
+  @Post('generate-resetlink')
+  public async generateResetLink(
+    @Body() generateResetLinkDto: GenerateResetLinkDto
+  ){
+    return await this.authService.generateResetLink(generateResetLinkDto)
+  }
+
+  @Post('reset-password')
+  public async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto
+  ){
+    return await this.authService.resetPassword(resetPasswordDto)
   }
 
   private setRefreshTokenCookie(

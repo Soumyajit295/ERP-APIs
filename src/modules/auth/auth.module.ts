@@ -7,10 +7,14 @@ import { DatabaseService } from 'src/database/database.service';
 import { JwtModule } from '@nestjs/jwt';
 import { RefreshTokensRepository } from 'src/repositories/refresh-token.repository';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RedisModule } from '../redis/redis.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     UsersModule,
+    RedisModule,
+    EmailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -22,4 +22,8 @@ export class UsersService {
     public async getUserById(userId: string){
         return await this.usersRepository.findById(userId)
     }
+
+    public async updatePassword(email: string,password: string){
+        return await this.usersRepository.updatePassword(email,password)
+    }
 }
