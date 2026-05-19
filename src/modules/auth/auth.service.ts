@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
@@ -9,6 +9,10 @@ import { calculateExpiry } from 'src/common/utils/calculateExpiry.util';
 import { DatabaseService } from 'src/database/database.service';
 import { RefreshTokensRepository } from 'src/repositories/refresh-token.repository';
 import { JwtService } from '@nestjs/jwt';
+import { GenerateResetLinkDto } from './dto/generate-resetlink.dto';
+import { RedisService } from '../redis/redis.service';
+import { EmailQueue } from '../email/email.queue';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +21,9 @@ export class AuthService {
         private readonly genearateTokensProvider: GenerateTokensProvider,
         private readonly refreshTokensRepository: RefreshTokensRepository,
         private readonly jwtService: JwtService,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        private readonly redisService: RedisService,
+        private readonly emailQueue: EmailQueue
     ){}
 
     public async register(registerDto: RegisterDto){
@@ -92,5 +98,59 @@ export class AuthService {
     
     public async logout(token: string){
         return await this.refreshTokensRepository.logout(token)
+    }
+
+    public async generateResetLink(generateResetLinkDto: GenerateResetLinkDto){
+        try {
+            const existingUser = await this.usersService.findByEmail(generateResetLinkDto.email)
+            if(!existingUser){
+                throw new BadRequestException('Email id is not registered')
+            }
+            const token = await this.jwtService.signAsync(
+                {email: generateResetLinkDto.email},
+                {
+                    secret: this.configService.get<string>('JWT_SECRET'),
+                    expiresIn: '5m'
+                },
+            )
+            await this.redisService.setData(`reset-password:${generateResetLinkDto.email}`,token,300)
+            await this.emailQueue.sendResetLink(generateResetLinkDto.email,`http://localhost:5173/reset-link?token=${token}`)
+            return {message: 'Reset link sent successfully'}
+        } catch (error) {
+            if (error instanceof HttpException) {
+                throw error
+            }
+            throw new InternalServerErrorException('Internal server error, Failed to generate reset link')
+        }
+    }
+
+    public async resetPassword(resetPasswordDto: ResetPasswordDto){
+        try {
+            const token = resetPasswordDto?.token
+            if(!token){
+                throw new BadRequestException('Failed to reset password, token missing')
+            }
+            const payload = await this.jwtService.verifyAsync(token,{secret: this.configService.get<string>('JWT_SECRET')})
+
+            if(!payload){
+                throw new BadRequestException('Reset link is expired')
+            }
+            
+            const isPresetInRedis = await this.redisService.existData(`reset-password:${payload.email}`)
+
+            if (isPresetInRedis) {
+                await this.redisService.delData(`reset-password:${payload.email}`);
+            } else {
+                throw new BadRequestException('Reset link is for one time use');
+            }
+
+            const hashedPassword = await bcrypt.hash(resetPasswordDto.password,10)
+
+            await this.usersService.updatePassword(payload.email,hashedPassword)
+
+            return {message : 'Password updated successfully'}
+        } catch (error) {
+            throw new InternalServerErrorException(error,'Internal server error, Failed to reset password')
+        }
     }
 }

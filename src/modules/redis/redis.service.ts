@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import Redis from 'ioredis';
 
 @Injectable()
@@ -8,17 +8,21 @@ export class RedisService {
         private readonly redisClient: Redis
     ){}
     async setData(key: string,data: unknown,ttl?: number){
-        const serializeDate = JSON.stringify(data)
-        if(ttl){
-            await this.redisClient.set(
-                key,
-                serializeDate,
-                'EX',
-                ttl
-            )
-        }
-        else{
-            await this.redisClient.set(key,serializeDate)
+        try {
+            const serializeDate = JSON.stringify(data)
+            if(ttl){
+                await this.redisClient.set(
+                    key,
+                    serializeDate,
+                    'EX',
+                    ttl
+                )
+            }
+            else{
+                await this.redisClient.set(key,serializeDate)
+            }
+        } catch (error) {
+            throw new InternalServerErrorException(error,'Internal server error')
         }
     }
 

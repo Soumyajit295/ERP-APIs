@@ -105,6 +105,19 @@ export class UsersRepository{
         return result.rows[0].password_hash
     }
 
+    async updatePassword(email: string,password: string) {
+        try {
+            const query = `
+                UPDATE users
+                SET password_hash = $2
+                WHERE email = $1
+            `
+            await this.databaseService.query(query,[email,password])
+        } catch (error) {
+            throw new InternalServerErrorException(error,'Internal server error, Failed to update password')
+        }
+    }
+
     private mapRowToUser(row: any): User{
         return{
             id: row.id,
