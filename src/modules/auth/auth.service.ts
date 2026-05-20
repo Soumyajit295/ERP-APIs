@@ -153,4 +153,19 @@ export class AuthService {
             throw new InternalServerErrorException(error,'Internal server error, Failed to reset password')
         }
     }
+
+    public async verifyAccessToken(token: string){
+        try {
+            return await this.jwtService.verifyAsync(
+                token,
+                {secret: this.configService.get<string>('JWT_SECRET')}
+            )
+        } catch (error) {
+            throw new UnauthorizedException('Invalid or expired access token')
+        }
+    }
+
+    public async getMe(userId: string){
+       return await this.usersService.getMe(userId)
+    }
 }
