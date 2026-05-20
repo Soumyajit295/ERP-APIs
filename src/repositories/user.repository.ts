@@ -6,6 +6,7 @@ import { TenantRepository } from "./tenant.repository";
 import { CreateUserDto } from "src/common/dto/createUser.dto";
 import * as bcrypt from 'bcrypt';
 import { PoolClient } from "pg";
+import { Me } from "src/entities/me.entity";
 
 @Injectable()
 export class UsersRepository{
@@ -116,6 +117,54 @@ export class UsersRepository{
         } catch (error) {
             throw new InternalServerErrorException(error,'Internal server error, Failed to update password')
         }
+    }
+
+    async getUser(userId: string): Promise<Me | null> {
+        try {
+            const query = `
+                SELECT
+                    u.id AS user_id,
+                    u.fname,
+                    u.lname,
+                    u.email,
+                    u.phone,
+                    t.id AS tenant_id,
+                    t.company_name,
+                    r.name AS role_name
+                FROM users u
+                JOIN tenants t 
+                    ON t.id = u.tenant_id
+                JOIN roles r 
+                    ON r.id = u.role_id
+                WHERE u.id = $1;
+            `;
+
+            const result = await this.databaseService.query(query, [userId]);
+
+            if (result.rows.length === 0) {
+                return null;
+            }
+
+            return this.mapRowToMeResponse(result.rows[0]);
+
+        } catch (error: any) {
+            throw new InternalServerErrorException(
+                'Internal server error, Failed to fetch user'
+            );
+        }
+    }
+
+    private mapRowToMeResponse(row: any): Me {
+        return {
+            userId: row.user_id,
+            fname: row.fname,
+            lname: row.lname,
+            email: row.email,
+            phone: row.phone,
+            tenantId: row.tenant_id,
+            companyName: row.company_name,
+            roleName: row.role_name,
+        };
     }
 
     private mapRowToUser(row: any): User{
