@@ -6,6 +6,7 @@ export class User {
     email!: string;
     phone?: string;
     roleId!: string;
+    roleName?: string;
     is_active!: boolean;
     created_at!: Date;
     updated_at!: Date;

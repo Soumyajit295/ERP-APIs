@@ -7,6 +7,9 @@ import { parseMaxAge } from 'src/common/utils/calculateExpiry.util';
 import { ConfigService } from '@nestjs/config';
 import { GenerateResetLinkDto } from './dto/generate-resetlink.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { Public } from './public.decorator';
+import { CurrentUser } from './currentuser.decorator';
+import type { CurrentUserPayload } from './types/current-user.type';
 
 @Controller('auth')
 export class AuthController {
@@ -15,6 +18,7 @@ export class AuthController {
     private readonly configService: ConfigService
   ) {}
 
+  @Public()
   @Post('register')
   public async register(
     @Body() registerDto: RegisterDto
@@ -22,6 +26,7 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
+  @Public()
   @Post('login')
   public async login(
     @Body() loginDto: LoginDto,
@@ -32,6 +37,7 @@ export class AuthController {
     return {accessToken};
   }
 
+  @Public()
   @Post('refresh-token')
   public async refreshToken(
     @Req() req: Request,
@@ -58,6 +64,7 @@ export class AuthController {
     return await this.authService.logout(refresh_token)
   }
 
+  @Public()
   @Post('generate-resetlink')
   public async generateResetLink(
     @Body() generateResetLinkDto: GenerateResetLinkDto
@@ -74,19 +81,9 @@ export class AuthController {
 
   @Get('me')
   public async getMe(
-    @Req() req: Request
+    @CurrentUser() user: CurrentUserPayload
   ){
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith('Bearer ')
-      ? authHeader.slice(7)
-      : null;
-
-    if (!token) {
-      throw new UnauthorizedException('Access token not found')
-    }
-
-    const payload = await this.authService.verifyAccessToken(token)
-    return await this.authService.getMe(payload.sub)
+    return await this.authService.getMe(user.userId)
   }
 
   private setRefreshTokenCookie(
