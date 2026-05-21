@@ -42,8 +42,10 @@ export class GenerateTokensProvider {
         user.id,
         this.configService.get<string>("ACCESS_TOKEN_TTL") as string,
         {
+          userId: user.id,
           tenantId: user.tenantId,
           role: user.roleId,
+          roleName: user.roleName ? [user.roleName] : [],
           email: user.email,
         }
       ),

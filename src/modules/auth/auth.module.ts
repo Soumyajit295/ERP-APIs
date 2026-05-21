@@ -9,6 +9,7 @@ import { RefreshTokensRepository } from 'src/repositories/refresh-token.reposito
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RedisModule } from '../redis/redis.module';
 import { EmailModule } from '../email/email.module';
+import { JwtAuthGuard } from './jwtAuth.guard';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { EmailModule } from '../email/email.module';
     })
   ],
   controllers: [AuthController],
-  providers: [AuthService,GenerateTokensProvider,RefreshTokensRepository,DatabaseService]
+  providers: [AuthService,GenerateTokensProvider,RefreshTokensRepository,DatabaseService,JwtAuthGuard],
+  exports: [JwtAuthGuard]
 })
 export class AuthModule {}

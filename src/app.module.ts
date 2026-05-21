@@ -12,6 +12,7 @@ import { RefreshTokensRepository } from './repositories/refresh-token.repository
 import { QueueModule } from './modules/queue/queue.module';
 import { EmailModule } from './modules/email/email.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { RedisModule } from './modules/redis/redis.module';
     AuthModule,
     QueueModule,
     EmailModule,
-    RedisModule
+    RedisModule,
+    RolesModule
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseService, UsersRepository,TenantRepository,RefreshTokensRepository],

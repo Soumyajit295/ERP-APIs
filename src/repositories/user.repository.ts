@@ -77,8 +77,11 @@ export class UsersRepository{
 
     async findByEmail(email: string, client?: PoolClient): Promise<User | null>{
         const query = `
-            SELECT * FROM users
-            WHERE email = $1 AND deleted_at IS NULL;
+            SELECT u.*, r.name AS role_name
+            FROM users u
+            JOIN roles r
+                ON r.id = u.role_id
+            WHERE u.email = $1 AND u.deleted_at IS NULL;
         `
         const result = client
             ? await client.query(query,[email])
@@ -90,7 +93,11 @@ export class UsersRepository{
 
     async findById(userId: string){
         const query = `
-            SELECT * FROM users WHERE id = $1
+            SELECT u.*, r.name AS role_name
+            FROM users u
+            JOIN roles r
+                ON r.id = u.role_id
+            WHERE u.id = $1
         `;
         const result = await this.databaseService.query(query,[userId])
         return this.mapRowToUser(result.rows[0])
@@ -174,6 +181,7 @@ export class UsersRepository{
             lname: row.lname,
             email: row.email,
             roleId: row.role_id,
+            roleName: row.role_name,
             tenantId: row.tenant_id,
             phone: row.phone,
             is_active: row.is_active,
