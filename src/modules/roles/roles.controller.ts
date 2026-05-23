@@ -1,14 +1,34 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { Roles } from '../auth/roles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
-import { JwtAuthGuard } from '../auth/jwtAuth.guard';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, ParseUUIDPipe, Post } from '@nestjs/common';
+import { RolesService } from './roles.service';
+import { CurrentUser } from '../auth/currentuser.decorator';
+import type { CurrentUserPayload } from '../auth/types/current-user.type';
+import { CreateRolesDto } from 'src/common/dto/createRole.dto';
 
 @Controller('roles')
 export class RolesController {
-    @UseGuards(JwtAuthGuard,RolesGuard)
-    @Roles('ADMIN')
+    constructor(
+        private readonly rolesService: RolesService
+    ){}
     @Get()
-    public async getRole(){
-        return 'Yeeeeeeeeeeeee....'
+    public async getRole(
+        @CurrentUser() user: CurrentUserPayload
+    ){
+        return await this.rolesService.getRolesByTenantID(user.tenantId)
+    }
+
+    @Post()
+    public async createRole(
+        @CurrentUser() user: CurrentUserPayload,
+        @Body() createRoleDto: CreateRolesDto
+    ){
+        return await this.rolesService.createRole(user.tenantId,createRoleDto)
+    }
+
+    @Delete(':id')
+    public async deleteRole(
+        @CurrentUser() user: CurrentUserPayload,
+        @Param('id', ParseUUIDPipe) id: string
+    ){
+        return await this.rolesService.deleteRole(id)
     }
 }
