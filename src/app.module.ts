@@ -13,6 +13,7 @@ import { QueueModule } from './modules/queue/queue.module';
 import { EmailModule } from './modules/email/email.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { RolesRepository } from './repositories/role.repository';
 
 @Module({
   imports: [
