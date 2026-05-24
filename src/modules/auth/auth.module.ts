@@ -10,6 +10,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RedisModule } from '../redis/redis.module';
 import { EmailModule } from '../email/email.module';
 import { JwtAuthGuard } from './jwtAuth.guard';
+import { PermissionGuard } from './permission.guard';
+import { PermissionRepository } from 'src/repositories/permission.repository';
 
 @Module({
   imports: [
@@ -25,7 +27,7 @@ import { JwtAuthGuard } from './jwtAuth.guard';
     })
   ],
   controllers: [AuthController],
-  providers: [AuthService,GenerateTokensProvider,RefreshTokensRepository,DatabaseService,JwtAuthGuard],
-  exports: [JwtAuthGuard]
+  providers: [AuthService,GenerateTokensProvider,RefreshTokensRepository,DatabaseService,JwtAuthGuard,PermissionGuard,PermissionRepository],
+  exports: [JwtAuthGuard,PermissionGuard]
 })
 export class AuthModule {}

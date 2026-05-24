@@ -7,7 +7,7 @@ import { RolesRepository } from 'src/repositories/role.repository';
 import { DatabaseService } from 'src/database/database.service';
 
 @Module({
-  imports: [JwtModule],
+  imports: [JwtModule,AuthModule],
   controllers: [RolesController],
   providers: [RolesService,RolesRepository,DatabaseService]
 })

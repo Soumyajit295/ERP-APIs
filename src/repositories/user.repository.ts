@@ -7,12 +7,14 @@ import { CreateUserDto } from "src/common/dto/createUser.dto";
 import * as bcrypt from 'bcrypt';
 import { PoolClient } from "pg";
 import { Me } from "src/entities/me.entity";
+import { PermissionRepository } from "./permission.repository";
 
 @Injectable()
 export class UsersRepository{
     constructor(
         private readonly databaseService: DatabaseService,
-        private readonly tenantRepository: TenantRepository
+        private readonly tenantRepository: TenantRepository,
+        private readonly permissionRepository: PermissionRepository
     ){}
 
     async register(registerDto: RegisterDto){
@@ -31,6 +33,9 @@ export class UsersRepository{
     
             const tenant = await this.tenantRepository.createTenant({companyName: registerDto.companyName,city: registerDto.city}, client)
             const adminResult = await client.query(`SELECT id FROM roles WHERE name = $1 AND tenant_id = $2`,['ADMIN',tenant.id])
+            if(adminResult.rows.length === 0){
+                throw new InternalServerErrorException('Admin role not created for tenant')
+            }
             const user = await this.createUser(
                 {
                     fname: registerDto.firstName,
@@ -42,6 +47,7 @@ export class UsersRepository{
                 tenant.id,
                 client
             )
+            await this.permissionRepository.giveAllModulePermissionToAdminForTenant(adminResult.rows[0].id,tenant.id,client)
             return user;
         })
     }
@@ -161,6 +167,30 @@ export class UsersRepository{
         }
     }
 
+    async getTenantUsers(tenantId: string){
+        try {
+            const query = `
+                SELECT 
+                    u.fname,
+                    u.lname,
+                    u.email,
+                    u.phone,
+                    u.tenant_id,
+                    u.role_id as role_id,
+                    r.name as role_name
+                FROM users u
+                JOIN roles r on r.id = u.role_id
+                WHERE u.tenant_id = $1 AND u.deleted_at IS NULL
+            `;
+            const result = await this.databaseService.query(query,[tenantId])
+            if(result.rows.length === 0) return null;
+
+            return result.rows.map(row => this.mapRowToMeResponse(row))
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error, failed to fetch tenant users')
+        }
+    }
+
     private mapRowToMeResponse(row: any): Me {
         return {
             userId: row.user_id,
@@ -170,6 +200,7 @@ export class UsersRepository{
             phone: row.phone,
             tenantId: row.tenant_id,
             companyName: row.company_name,
+            roleId: row.role_id,
             roleName: row.role_name,
         };
     }
