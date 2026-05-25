@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, Query } from "@nestjs/common";
 import { CreateRolesDto } from "src/common/dto/createRole.dto";
 import { DatabaseService } from "src/database/database.service";
 
@@ -28,18 +28,39 @@ export class RolesRepository {
 
     async createRole(tenantId: string, createRoleDto: CreateRolesDto){
         try {
-            const query = `
-                INSERT INTO ROLES(tenant_id,name)
-                VALUES($1,$2)
-                RETURNING *
-            `;
+            const moduleIds = [...new Set(createRoleDto.moduleIds ?? [])]
 
-            const result = await this.databaseService.query(query,[tenantId,createRoleDto.roleName])
+            return await this.databaseService.transaction(async (client) => {
+                const roleQuery = `
+                    INSERT INTO roles(tenant_id,role_name)
+                    VALUES($1,$2)
+                    RETURNING *
+                `
+                const roleResult = await client.query(roleQuery,[tenantId,createRoleDto.roleName])
 
-            if(result.rows.length === 0) return null;
+                if(roleResult.rows.length === 0) return null
 
-            return this.mapRowToRoles(result.rows[0])
+                const role = roleResult.rows[0]
+
+                if(moduleIds.length > 0){
+                    const moduleQuery = `
+                        INSERT INTO role_permissions(role_id,per_id,tenant_id)
+                        SELECT
+                            $1 AS role_id,
+                            p.permission_id AS per_id,
+                            $2 AS tenant_id
+                        FROM permissions p
+                        WHERE p.module_id = ANY($3::UUID[]) AND p.deleted_at IS NULL            
+                    `;
+
+                    await client.query(moduleQuery,[role.id,tenantId,moduleIds])
+                }
+                return role;       
+            })
         } catch (error) {
+            if(error instanceof BadRequestException){
+                throw error
+            }
             throw new InternalServerErrorException('Internal server error, unable to create role')
         }
     }
