@@ -14,6 +14,7 @@ import { EmailModule } from './modules/email/email.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { RolesRepository } from './repositories/role.repository';
+import { PermissionRepository } from './repositories/permission.repository';
 
 @Module({
   imports: [
@@ -30,6 +31,6 @@ import { RolesRepository } from './repositories/role.repository';
     RolesModule
   ],
   controllers: [AppController],
-  providers: [AppService, DatabaseService, UsersRepository,TenantRepository,RefreshTokensRepository],
+  providers: [AppService, DatabaseService, UsersRepository,TenantRepository,PermissionRepository,RefreshTokensRepository],
 })
 export class AppModule {}

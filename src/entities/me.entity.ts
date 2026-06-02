@@ -6,5 +6,6 @@ export class Me {
     phone?: string;
     tenantId!: string;
     companyName!: string;
+    roleId!: string
     roleName!: string
 }
