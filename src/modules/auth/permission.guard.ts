@@ -30,6 +30,7 @@ export class PermissionGuard implements CanActivate {
 
         const userPermissions = await this.permissionRepository.getAllPermissionForUser(user.userId);
         const userPermissionSet = new Set(userPermissions.map((permission) => permission.toLowerCase()));
+
         const missingPermissions = requiredPermissions.filter(
             (permission) => !userPermissionSet.has(permission.toLowerCase())
         );

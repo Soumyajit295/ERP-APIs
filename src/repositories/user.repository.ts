@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { PoolClient } from "pg";
 import { Me } from "src/entities/me.entity";
 import { PermissionRepository } from "./permission.repository";
+import { UpdateUserDto } from "src/common/dto/updateUser.dto";
 
 @Injectable()
 export class UsersRepository{
@@ -132,6 +133,50 @@ export class UsersRepository{
         }
     }
 
+    async updateUser(updateUserDto: UpdateUserDto,userId: string) {
+        try {
+            const updates: string[] = []
+            const values: any[] = []
+            let index = 1
+
+            const columnMap = {
+                fname: 'fname',
+                lname: 'lname',
+                phone: 'phone',
+                roleId: 'role_id',
+            };
+
+            Object.entries(updateUserDto).forEach(([key,value]) => {
+                if(value!==undefined){
+                    updates.push(`${columnMap[key]} = $${index}`)
+                    values.push(value)
+                    index++
+                }
+            })
+
+            if (updates.length === 0) {
+                throw new Error('No fields provided for update');
+            }
+
+            values.push(userId)
+
+            const updateQuery = `
+                UPDATE users 
+                SET ${updates.join(', ')}
+                WHERE id = $${index}
+                RETURNING *
+            `
+
+            const result = await this.databaseService.query(updateQuery,values)
+
+            if(result.rows.length === 0) return null;
+
+            return this.mapRowToUser(result.rows[0])
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error, while updating user')
+        }
+    }
+
     async getUser(userId: string): Promise<Me | null> {
         try {
             const query = `
@@ -164,6 +209,23 @@ export class UsersRepository{
             throw new InternalServerErrorException(
                 'Internal server error, Failed to fetch user'
             );
+        }
+    }
+
+    async deleteUser(userId: string){
+        try {
+            const deleteQuery = `
+                UPDATE users
+                SET deleted_at = NOW()
+                WHERE id = $1 AND deleted_at IS NULL
+                RETURNING id
+            `;
+
+            await this.databaseService.query(deleteQuery,[userId])
+
+            return {message : 'User deleted successfully'}
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error, while deleting user')
         }
     }
 

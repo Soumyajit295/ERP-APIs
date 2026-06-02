@@ -32,7 +32,7 @@ export class RolesRepository {
 
             return await this.databaseService.transaction(async (client) => {
                 const roleQuery = `
-                    INSERT INTO roles(tenant_id,role_name)
+                    INSERT INTO roles(tenant_id,name)
                     VALUES($1,$2)
                     RETURNING *
                 `
@@ -61,6 +61,7 @@ export class RolesRepository {
             if(error instanceof BadRequestException){
                 throw error
             }
+            console.log(error)
             throw new InternalServerErrorException('Internal server error, unable to create role')
         }
     }

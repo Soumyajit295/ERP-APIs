@@ -51,7 +51,7 @@ export class PermissionRepository {
 
             if(result.rows.length === 0) return [];
 
-            return result.rows.map((row) => `${row.module_name.toLowerCase()}.${row.permission_name.toLowerCase()}`)
+            return result.rows.map((row) => `${row.module_name.toLowerCase()}_${row.permission_name.toLowerCase()}`)
         } catch (error) {
             throw new InternalServerErrorException('Internal server error')
         }

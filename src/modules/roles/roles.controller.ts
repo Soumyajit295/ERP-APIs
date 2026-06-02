@@ -3,6 +3,8 @@ import { RolesService } from './roles.service';
 import { CurrentUser } from '../auth/currentuser.decorator';
 import type { CurrentUserPayload } from '../auth/types/current-user.type';
 import { CreateRolesDto } from 'src/common/dto/createRole.dto';
+import { PERMISSION_CODES } from 'src/common/constants/permissions.constant';
+import { Permissions } from '../auth/permissions.decorator';
 
 @Controller('roles')
 export class RolesController {
@@ -17,6 +19,7 @@ export class RolesController {
     }
 
     @Post()
+    @Permissions(PERMISSION_CODES.USER_CREATE)
     public async createRole(
         @CurrentUser() user: CurrentUserPayload,
         @Body() createRoleDto: CreateRolesDto
