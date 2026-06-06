@@ -17,6 +17,7 @@ import { RolesRepository } from './repositories/role.repository';
 import { PermissionRepository } from './repositories/permission.repository';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
+import { WarehousesModule } from './modules/warehouses/warehouses.module';
 
 @Module({
   imports: [
@@ -32,7 +33,8 @@ import { ProductsModule } from './modules/products/products.module';
     RedisModule,
     RolesModule,
     CategoriesModule,
-    ProductsModule
+    ProductsModule,
+    WarehousesModule
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseService, UsersRepository,TenantRepository,PermissionRepository,RefreshTokensRepository],
