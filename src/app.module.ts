@@ -18,6 +18,7 @@ import { PermissionRepository } from './repositories/permission.repository';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
 import { WarehousesModule } from './modules/warehouses/warehouses.module';
+import { SuppliersModule } from './modules/suppliers/suppliers.module';
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { WarehousesModule } from './modules/warehouses/warehouses.module';
     RolesModule,
     CategoriesModule,
     ProductsModule,
-    WarehousesModule
+    WarehousesModule,
+    SuppliersModule
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseService, UsersRepository,TenantRepository,PermissionRepository,RefreshTokensRepository],
