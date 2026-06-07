@@ -22,6 +22,7 @@ import { SuppliersService } from './suppliers.service';
 import {
   CreateSupplierDto,
   GetSupplierParamsDto,
+  SupplierDetailsResponseDto,
   SupplierMessageResponseDto,
   SupplierOptionDto,
   SupplierPaginatedResponseDto,
@@ -108,5 +109,22 @@ export class SuppliersController {
     @CurrentUser() user: CurrentUserPayload,
   ) {
     return await this.supplierService.deleteSupplier(supplierId, user.tenantId);
+  }
+
+  @Get(':supplierId')
+  @Permissions(PERMISSION_CODES.SUPPLIERS_READ)
+  @ApiParam({ name: 'supplierId', format: 'uuid' })
+  @ApiOperation({
+    summary: 'Get supplier details',
+  })
+  @ApiOkResponse({ type: SupplierDetailsResponseDto })
+  public async getSupplierDetails(
+    @Param('supplierId', ParseUUIDPipe) supplierId: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return await this.supplierService.getSupplierDetails(
+      supplierId,
+      user.tenantId,
+    );
   }
 }

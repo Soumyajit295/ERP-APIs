@@ -11,6 +11,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { PurchaseOrderStatus } from '../enums/purchase-order.enum';
 
 export class CreateSupplierDto {
   @ApiProperty({ maxLength: 255, example: 'ABC Traders' })
@@ -147,4 +148,61 @@ export class SupplierOptionDto {
 export class SupplierMessageResponseDto {
   @ApiProperty({ example: 'Supplier created successfully' })
   message!: string;
+}
+
+export class PurchaseOrderDto {
+  @ApiProperty({ format: 'uuid' })
+  purchaseOrderId!: string;
+
+  @ApiProperty({ example: 'PO-2026-1780829766072' })
+  purchaseOrderNumber!: string;
+
+  @ApiProperty({ example: '2026-06-07' })
+  orderDate!: string;
+
+  @ApiProperty({ example: 602.5 })
+  totalAmount!: number;
+
+  @ApiProperty({
+    enum: PurchaseOrderStatus,
+    example: PurchaseOrderStatus.RECEIVED,
+  })
+  orderStatus!: PurchaseOrderStatus;
+}
+
+export class SupplierContactInformation {
+  @ApiPropertyOptional({ example: 'Raj Mehta' })
+  supplierContactPerson?: string;
+
+  @ApiPropertyOptional({ example: 'Market Road, Mumbai' })
+  supplierAddress?: string;
+
+  @ApiPropertyOptional({ example: '+919876543210' })
+  supplierPhone?: string;
+
+  @ApiPropertyOptional({ example: 'raj@abctraders.com' })
+  supplierEmail?: string;
+}
+
+export class SupplierDetailsResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  supplierId!: string;
+
+  @ApiProperty({ example: 'ABC Traders' })
+  supplierName!: string;
+
+  @ApiProperty({ example: 12 })
+  totalOrders!: number;
+
+  @ApiProperty({ example: 15250.75 })
+  totalSpents!: number;
+
+  @ApiProperty({ example: true })
+  supplierStatus!: boolean;
+
+  @ApiProperty({ type: SupplierContactInformation })
+  contactInformation!: SupplierContactInformation;
+
+  @ApiProperty({ type: [PurchaseOrderDto] })
+  latestPurchaseOrders!: PurchaseOrderDto[];
 }
