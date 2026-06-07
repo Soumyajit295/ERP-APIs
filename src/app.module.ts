@@ -19,6 +19,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
 import { WarehousesModule } from './modules/warehouses/warehouses.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
+import { PurchaseOrdersModule } from './modules/purchase-orders/purchase-orders.module';
 
 @Module({
   imports: [
@@ -36,7 +37,8 @@ import { SuppliersModule } from './modules/suppliers/suppliers.module';
     CategoriesModule,
     ProductsModule,
     WarehousesModule,
-    SuppliersModule
+    SuppliersModule,
+    PurchaseOrdersModule
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseService, UsersRepository,TenantRepository,PermissionRepository,RefreshTokensRepository],
