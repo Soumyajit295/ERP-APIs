@@ -7,9 +7,12 @@ import { PaginatedResponseDto } from 'src/common/dto/paginationResponse.dto';
 import {
   CreateSupplierDto,
   GetSupplierParamsDto,
+  PurchaseOrderDto,
+  SupplierDetailsResponseDto,
   SupplierPaginatedResponseDto,
   UpdateSupplierDto,
 } from 'src/common/dto/supplier.dto';
+import { PurchaseOrderStatus } from 'src/common/enums/purchase-order.enum';
 import { DatabaseService } from 'src/database/database.service';
 
 export interface Supplier {
@@ -21,6 +24,7 @@ export interface Supplier {
   address?: string;
   taxNumber?: string;
   isActive?: boolean;
+  totalOrders?: number;
 }
 
 @Injectable()
@@ -102,7 +106,12 @@ export class SupplierRepository {
                 s.contact_person,
                 s.address,
                 s.tax_number,
-                s.is_active
+                s.is_active,
+                (
+                  SELECT COUNT(*)::INT
+                  FROM purchase_orders po
+                  WHERE po.supplier_id = s.supplier_id AND po.deleted_at IS NULL
+                ) AS total_orders
             FROM suppliers s
             WHERE s.tenant_id = $1
                 AND s.deleted_at IS NULL
@@ -258,6 +267,93 @@ export class SupplierRepository {
       );
     }
   }
+
+  async getSupplierDetails(
+    supplierId: string,
+    tenantId: string,
+  ): Promise<SupplierDetailsResponseDto | null> {
+    try {
+      const supplierQuery = `
+        SELECT 
+          s.supplier_id,
+          s.supplier_name,
+          s.contact_person,
+          s.phone,
+          s.email,
+          s.address,
+          s.is_active,
+          (
+            SELECT COUNT(*)::INT
+            FROM purchase_orders po
+            WHERE po.supplier_id = $1
+              AND po.tenant_id = $2
+              AND po.deleted_at IS NULL
+          ) AS total_order,
+          (
+            SELECT
+              COALESCE(SUM(poi.line_total), 0)::float
+            FROM purchase_orders po
+            JOIN purchase_order_items poi ON poi.po_id = po.po_id
+            WHERE po.supplier_id = $1
+              AND po.tenant_id = $2
+              AND po.deleted_at IS NULL
+              AND po.status = $3
+          ) AS total_spent
+
+        FROM suppliers s
+        WHERE s.supplier_id = $1
+          AND s.tenant_id = $2
+          AND s.deleted_at IS NULL
+      `;
+
+      const supplierValues = [
+        supplierId,
+        tenantId,
+        PurchaseOrderStatus.RECEIVED,
+      ];
+
+      const lastThreePurchaseOrderQuery = `
+        SELECT 
+          po.po_id AS purchase_order_id,
+          po.po_number AS purchase_order_number,
+          po.status AS order_status,
+          po.order_date AS order_date,
+          (
+            SELECT COALESCE(SUM(poi.line_total), 0)::float
+            FROM purchase_order_items poi
+            WHERE poi.po_id = po.po_id
+          ) AS total_amount
+        FROM purchase_orders po
+        WHERE po.supplier_id = $1
+          AND po.tenant_id = $2
+          AND po.deleted_at IS NULL
+        ORDER BY po.created_at DESC
+        LIMIT 3
+      `;
+
+      const lastThreePurchaseOrderValues = [supplierId, tenantId];
+
+      const [supplierResult, purchaseOrderResult] = await Promise.all([
+        this.databaseService.query(supplierQuery, supplierValues),
+        this.databaseService.query(
+          lastThreePurchaseOrderQuery,
+          lastThreePurchaseOrderValues,
+        ),
+      ]);
+
+      if (supplierResult.rows.length === 0) return null;
+
+      return this.mapRowToSupplierDetails(
+        supplierResult.rows[0],
+        purchaseOrderResult?.rows ?? [],
+      );
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Internal server error, while fetching supplier details',
+      );
+    }
+  }
+
   private mapRowToSupplier(row: any): Supplier {
     return {
       supplierId: row.supplier_id,
@@ -268,6 +364,33 @@ export class SupplierRepository {
       address: row.address,
       taxNumber: row.tax_number,
       isActive: row.is_active,
+      totalOrders: row.total_orders,
+    };
+  }
+
+  private mapRowToSupplierDetails(
+    row: any,
+    purchaseOrders: any[],
+  ): SupplierDetailsResponseDto {
+    return {
+      supplierId: row.supplier_id,
+      supplierName: row.supplier_name,
+      supplierStatus: row.is_active,
+      totalOrders: row.total_order,
+      totalSpents: row.total_spent,
+      contactInformation: {
+        supplierContactPerson: row.contact_person,
+        supplierPhone: row.phone,
+        supplierEmail: row.email,
+        supplierAddress: row.address,
+      },
+      latestPurchaseOrders: purchaseOrders.map((purchaseOrder) => ({
+        purchaseOrderId: purchaseOrder.purchase_order_id,
+        purchaseOrderNumber: purchaseOrder.purchase_order_number,
+        orderStatus: purchaseOrder.order_status,
+        orderDate: purchaseOrder.order_date,
+        totalAmount: Number(purchaseOrder.total_amount),
+      })),
     };
   }
 }

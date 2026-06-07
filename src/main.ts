@@ -17,6 +17,6 @@ async function bootstrap() {
   const jwtAuthGuard = app.get(JwtAuthGuard)
   const permissionGuard = app.get(PermissionGuard)
   app.useGlobalGuards(jwtAuthGuard, permissionGuard)
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 8000);
 }
 bootstrap();

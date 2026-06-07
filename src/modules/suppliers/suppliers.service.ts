@@ -27,4 +27,8 @@ export class SuppliersService {
     public async deleteSupplier(supplierId: string,tenantId: string){
         return await this.supplierRepository.deleteSupplier(supplierId,tenantId)
     }
+
+    public async getSupplierDetails(supplierId: string,tenantId: string){
+        return await this.supplierRepository.getSupplierDetails(supplierId,tenantId)
+    }
 }
