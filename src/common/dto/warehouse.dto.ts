@@ -143,3 +143,68 @@ export class WarehouseMessageResponseDto {
   @ApiProperty({ example: 'Warehouse created successfully' })
   message!: string;
 }
+
+export class WarehouseLocationInformation {
+  @ApiPropertyOptional({ example: 'Industrial Area, Sector 12' })
+  warehouseAddress?: string;
+
+  @ApiProperty({ example: '2026-06-07T10:30:00.000Z' })
+  warehouseCreatedAt!: string;
+}
+
+export class WarehouseContactInformation {
+  @ApiPropertyOptional({ example: 'Amit Sharma' })
+  warehouseContactPerson?: string;
+
+  @ApiPropertyOptional({ example: '+919876543210' })
+  warehousePhone?: string;
+}
+
+export class InventoryProducts {
+  @ApiProperty({ example: 'Keyboard' })
+  productName!: string;
+
+  @ApiProperty({ example: 'KEY-001' })
+  productSku!: string;
+
+  @ApiProperty({ example: 25 })
+  productQuantity!: number;
+
+  @ApiProperty({ example: 5 })
+  reservedProductQuantity!: number;
+
+  @ApiPropertyOptional({ example: '2026-06-07T10:30:00.000Z' })
+  lastUpdated?: string;
+}
+
+export class WarehouseDetailResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  warehouseId!: string;
+
+  @ApiProperty({ example: 'Main Warehouse' })
+  warehouseName!: string;
+
+  @ApiProperty({ example: true })
+  warehouseStatus!: boolean;
+
+  @ApiProperty({ example: 4 })
+  totalProducts!: number;
+
+  @ApiProperty({ example: 4 })
+  warehouseCapacity?: number;
+
+  @ApiProperty({ example: 125 })
+  unitsOnHand!: number;
+
+  @ApiProperty({ example: 15 })
+  totalReserved!: number;
+
+  @ApiProperty({ type: WarehouseLocationInformation })
+  addressInformation!: WarehouseLocationInformation;
+
+  @ApiProperty({ type: WarehouseContactInformation })
+  contactInformation!: WarehouseContactInformation;
+
+  @ApiProperty({ type: [InventoryProducts] })
+  inventoryItems!: InventoryProducts[];
+}

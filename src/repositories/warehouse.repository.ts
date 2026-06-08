@@ -2,12 +2,15 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { PaginatedResponseDto } from 'src/common/dto/paginationResponse.dto';
 import {
   CreateWarehouseDto,
   GetWarehouseParamsDto,
+  InventoryProducts,
   UpdateWarehouseDto,
+  WarehouseDetailResponseDto,
 } from 'src/common/dto/warehouse.dto';
 import { DatabaseService } from 'src/database/database.service';
 
@@ -186,7 +189,8 @@ export class WarehouseRepository {
 
     return {
       records:
-        warehouseResult?.rows?.map((row: any) => this.mapRowToWarehouse(row)) ?? [],
+        warehouseResult?.rows?.map((row: any) => this.mapRowToWarehouse(row)) ??
+        [],
       meta: {
         page: currentPage,
         limit: pageLimit,
@@ -236,6 +240,72 @@ export class WarehouseRepository {
     }
   }
 
+  async getWarehouseDetails(
+    warehouseId: string,
+    tenantId: string,
+  ): Promise<WarehouseDetailResponseDto> {
+    try {
+      const warehouseQuery = `
+        SELECT 
+          w.warehouse_id,
+          w.warehouse_name,
+          w.address,
+          w.phone,
+          w.contact_person,
+          w.created_at,
+          w.capacity,
+          w.is_active
+        FROM warehouses w
+        WHERE w.warehouse_id = $1
+        AND w.tenant_id = $2
+        AND w.deleted_at IS NULL
+      `;
+
+      const warehouseResult = await this.databaseService.query(warehouseQuery, [
+        warehouseId,
+        tenantId,
+      ]);
+
+      if (warehouseResult.rows.length === 0) {
+        throw new NotFoundException('Warehouse not found');
+      }
+
+      const inventoryProductsQuery = `
+        SELECT 
+          p.product_name,
+          p.sku AS product_sku,
+          i.quantity,
+          i.reserved_quantity,
+          i.last_restock_date
+        FROM inventory i
+        JOIN products p ON p.product_id = i.product_id AND p.deleted_at IS NULL
+        WHERE i.warehouse_id = $1
+              AND i.tenant_id = $2
+      `;
+
+      const inventoryResult = await this.databaseService.query(
+        inventoryProductsQuery,
+        [warehouseId, tenantId],
+      );
+
+      const inventoryProducts =
+        inventoryResult?.rows?.map((row: any) =>
+          this.mapRowToInventoryProduct(row),
+        ) ?? [];
+
+      return this.mapRowToInventoryDetail(
+        warehouseResult.rows[0],
+        inventoryProducts,
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Internal server error while fetching warehouse details',
+      );
+    }
+  }
   private mapRowToWarehouse(row: any): Warehouse {
     return {
       warehouseId: row.warehouse_id,
@@ -248,6 +318,46 @@ export class WarehouseRepository {
           ? undefined
           : Number(row.capacity),
       isActive: row.is_active,
+    };
+  }
+
+  private mapRowToInventoryProduct(row: any): InventoryProducts {
+    return {
+      productName: row.product_name,
+      productSku: row.product_sku,
+      productQuantity: Number(row.quantity),
+      reservedProductQuantity: Number(row.reserved_quantity),
+      lastUpdated: row.last_restock_date,
+    };
+  }
+
+  private mapRowToInventoryDetail(
+    row: any,
+    inventoryProducts: InventoryProducts[],
+  ): WarehouseDetailResponseDto {
+    return {
+      warehouseId: row.warehouse_id,
+      warehouseName: row.warehouse_name,
+      warehouseStatus: row.is_active,
+      warehouseCapacity: row.capacity,
+      addressInformation: {
+        warehouseAddress: row.address,
+        warehouseCreatedAt: row.created_at,
+      },
+      contactInformation: {
+        warehouseContactPerson: row.contact_person,
+        warehousePhone: row.phone,
+      },
+      inventoryItems: inventoryProducts,
+      totalProducts: inventoryProducts.length,
+      totalReserved: inventoryProducts.reduce(
+        (acc, curr) => acc + (curr.reservedProductQuantity ?? 0),
+        0,
+      ),
+      unitsOnHand: inventoryProducts.reduce(
+        (acc, curr) => acc + (curr.productQuantity ?? 0),
+        0,
+      ),
     };
   }
 }

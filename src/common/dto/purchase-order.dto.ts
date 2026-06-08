@@ -49,7 +49,10 @@ export class CreatePurchaseOrderDto {
   @IsDateString()
   orderDate!: string;
 
-  @ApiProperty({ enum: PurchaseOrderStatus, example: PurchaseOrderStatus.DRAFT })
+  @ApiProperty({
+    enum: PurchaseOrderStatus,
+    example: PurchaseOrderStatus.DRAFT,
+  })
   @IsEnum(PurchaseOrderStatus)
   status!: PurchaseOrderStatus;
 
@@ -95,7 +98,10 @@ export class GetPurchaseOrderQueryDto {
   @IsUUID()
   warehouseId?: string;
 
-  @ApiPropertyOptional({ enum: PurchaseOrderStatus, example: PurchaseOrderStatus.DRAFT })
+  @ApiPropertyOptional({
+    enum: PurchaseOrderStatus,
+    example: PurchaseOrderStatus.DRAFT,
+  })
   @IsOptional()
   @IsEnum(PurchaseOrderStatus)
   status?: PurchaseOrderStatus;
@@ -121,7 +127,10 @@ export class PurchaseOrderListResponseDto {
   @ApiProperty({ example: 'Main Warehouse' })
   warehouseName!: string;
 
-  @ApiProperty({ enum: PurchaseOrderStatus, example: PurchaseOrderStatus.DRAFT })
+  @ApiProperty({
+    enum: PurchaseOrderStatus,
+    example: PurchaseOrderStatus.DRAFT,
+  })
   status!: PurchaseOrderStatus;
 
   @ApiProperty({ example: 602.5 })
@@ -205,7 +214,10 @@ export class PurchaseOrderDeatilsResponseDto {
   @ApiProperty({ example: 'PO-2026-1780829766072' })
   purchaseOrderNumber!: string;
 
-  @ApiProperty({ enum: PurchaseOrderStatus, example: PurchaseOrderStatus.DRAFT })
+  @ApiProperty({
+    enum: PurchaseOrderStatus,
+    example: PurchaseOrderStatus.DRAFT,
+  })
   purchaseOrderStatus!: PurchaseOrderStatus;
 
   @ApiProperty({ example: '2026-06-07' })
@@ -229,4 +241,32 @@ export class PurchaseOrderMessageResponseDto {
   @IsString()
   @IsNotEmpty()
   message!: string;
+}
+
+export class PurchaseOrderStatusUpdateDataDto {
+  @ApiProperty({ format: 'uuid' })
+  purchaseOrderId!: string;
+
+  @ApiProperty({ example: 'PO-2026-1780829766072' })
+  purchaseOrderNumber!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  supplierId!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  warehouseId!: string;
+
+  @ApiProperty({
+    enum: PurchaseOrderStatus,
+    example: PurchaseOrderStatus.RECEIVED,
+  })
+  status!: PurchaseOrderStatus;
+
+  @ApiProperty({ example: '2026-06-07' })
+  orderDate!: string;
+}
+
+export class PurchaseOrderStatusUpdateResponseDto extends PurchaseOrderMessageResponseDto {
+  @ApiProperty({ type: PurchaseOrderStatusUpdateDataDto })
+  purchaseOrder!: PurchaseOrderStatusUpdateDataDto;
 }

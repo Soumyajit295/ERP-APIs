@@ -11,8 +11,10 @@ import {
   ProductItem,
   PurchaseOrderDeatilsResponseDto,
   PurchaseOrderListResponseDto,
+  PurchaseOrderStatusUpdateResponseDto,
   UpdatePurchaseOrderStatusDto,
 } from 'src/common/dto/purchase-order.dto';
+import { PurchaseOrderStatus } from 'src/common/enums/purchase-order.enum';
 import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
@@ -24,7 +26,9 @@ export class PurchaseOrderRepository {
     tenantId: string,
   ) {
     if (!createPurchaseOrderDto.items?.length) {
-      throw new BadRequestException('Purchase order must contain at least one item');
+      throw new BadRequestException(
+        'Purchase order must contain at least one item',
+      );
     }
 
     try {
@@ -109,8 +113,14 @@ export class PurchaseOrderRepository {
     getPurchaseOrdersQueryDto: GetPurchaseOrderQueryDto,
     tenantId: string,
   ): Promise<PaginatedResponseDto<PurchaseOrderListResponseDto>> {
-    const { page = 1, limit = 10, search, status, supplierId, warehouseId } =
-      getPurchaseOrdersQueryDto;
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      status,
+      supplierId,
+      warehouseId,
+    } = getPurchaseOrdersQueryDto;
 
     const currentPage = Math.max(Number(page), 1);
     const pageLimit = Math.min(Math.max(Number(limit), 1), 100);
@@ -232,30 +242,120 @@ export class PurchaseOrderRepository {
     updatePurchaseOrderDto: UpdatePurchaseOrderStatusDto,
     purchaseOrderId: string,
     tenantId: string,
-  ) {
+  ): Promise<PurchaseOrderStatusUpdateResponseDto> {
     try {
-      const query = `
-                UPDATE purchase_orders
-                SET status = $1, updated_at = NOW()
-                WHERE po_id = $2
-                    AND tenant_id = $3
-                    AND deleted_at IS NULL
-                RETURNING po_id
-            `;
-      const values = [updatePurchaseOrderDto.status, purchaseOrderId, tenantId];
-      const result = await this.databaseService.query(query, values);
+      return await this.databaseService.transaction(async (client) => {
+        const purchaseOrderQuery = `
+        SELECT
+          po_id,
+          status
+        FROM purchase_orders
+        WHERE po_id = $1
+          AND tenant_id = $2
+          AND deleted_at IS NULL
+      `;
 
-      if (result.rows.length === 0) {
-        throw new NotFoundException('Purchase order not found');
-      }
+        const purchaseOrderResult = await client.query(purchaseOrderQuery, [
+          purchaseOrderId,
+          tenantId,
+        ]);
 
-      return { message: 'Order status updated successfully' };
+        if (purchaseOrderResult.rows.length === 0) {
+          throw new BadRequestException('Purchase order not found');
+        }
+
+        const purchaseOrder = purchaseOrderResult.rows[0];
+
+        if (
+          purchaseOrder.status === PurchaseOrderStatus.RECEIVED &&
+          updatePurchaseOrderDto.status === PurchaseOrderStatus.RECEIVED
+        ) {
+          throw new BadRequestException('Purchase order already received');
+        }
+
+        if (updatePurchaseOrderDto.status === PurchaseOrderStatus.RECEIVED) {
+          const productsQuery = `
+          SELECT
+            po.tenant_id,
+            po.warehouse_id,
+            poi.product_id,
+            poi.quantity
+          FROM purchase_orders po
+          JOIN purchase_order_items poi
+            ON poi.po_id = po.po_id
+          WHERE po.po_id = $1
+        `;
+
+          const productsResult = await client.query(productsQuery, [
+            purchaseOrderId,
+          ]);
+
+          const products = productsResult.rows;
+
+          for (const product of products) {
+            const inventoryQuery = `
+            INSERT INTO inventory (
+              tenant_id,
+              warehouse_id,
+              product_id,
+              quantity,
+              last_restock_date
+            )
+            VALUES (
+              $1,
+              $2,
+              $3,
+              $4,
+              NOW()
+            )
+            ON CONFLICT (warehouse_id, product_id)
+            DO UPDATE
+            SET
+              quantity = inventory.quantity + EXCLUDED.quantity,
+              last_restock_date = NOW(),
+              updated_at = NOW()
+          `;
+
+            await client.query(inventoryQuery, [
+              product.tenant_id,
+              product.warehouse_id,
+              product.product_id,
+              product.quantity,
+            ]);
+          }
+        }
+
+        const statusUpdateQuery = `
+        UPDATE purchase_orders
+        SET
+          status = $1,
+          updated_at = NOW()
+        WHERE po_id = $2
+          AND tenant_id = $3
+          AND deleted_at IS NULL
+        RETURNING *
+      `;
+
+        const updateResult = await client.query(statusUpdateQuery, [
+          updatePurchaseOrderDto.status,
+          purchaseOrderId,
+          tenantId,
+        ]);
+
+        return {
+          message: 'Purchase order updated successfully',
+          purchaseOrder: this.mapRowToStatusUpdatedPurchaseOrder(
+            updateResult.rows[0],
+          ),
+        };
+      });
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof BadRequestException) {
         throw error;
       }
+
       throw new InternalServerErrorException(
-        'Internal server error while updating purchase order status',
+        'Internal server error while updating purchase order',
       );
     }
   }
@@ -354,7 +454,10 @@ export class PurchaseOrderRepository {
         throw new NotFoundException('Purchase order not found');
       }
 
-      return this.mapRowToOrderDetails(purchaseOrdersResult.rows[0], orderItems);
+      return this.mapRowToOrderDetails(
+        purchaseOrdersResult.rows[0],
+        orderItems,
+      );
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -373,6 +476,17 @@ export class PurchaseOrderRepository {
       warehouseName: row.warehouse_name,
       status: row.status,
       totalCost: Number(row.total_cost),
+      orderDate: row.order_date,
+    };
+  }
+
+  private mapRowToStatusUpdatedPurchaseOrder(row: any) {
+    return {
+      purchaseOrderId: row.po_id,
+      purchaseOrderNumber: row.po_number,
+      supplierId: row.supplier_id,
+      warehouseId: row.warehouse_id,
+      status: row.status,
       orderDate: row.order_date,
     };
   }
