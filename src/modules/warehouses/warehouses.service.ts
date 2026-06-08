@@ -52,4 +52,8 @@ export class WarehousesService {
   public async getWarehouseOptions(tenantId: string) {
     return await this.warehouseRepository.getWarehouseOptions(tenantId);
   }
+
+  public async getWarehouseDetails(warehouseId: string,tenantId: string){
+    return await this.warehouseRepository.getWarehouseDetails(warehouseId,tenantId)
+  }
 }

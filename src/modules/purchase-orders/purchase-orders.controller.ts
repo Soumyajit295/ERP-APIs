@@ -25,6 +25,7 @@ import {
   PurchaseOrderDeatilsResponseDto,
   PurchaseOrderMessageResponseDto,
   PurchaseOrderPaginatedResponseDto,
+  PurchaseOrderStatusUpdateResponseDto,
   UpdatePurchaseOrderStatusDto,
 } from 'src/common/dto/purchase-order.dto';
 import { CurrentUser } from '../auth/currentuser.decorator';
@@ -62,14 +63,29 @@ export class PurchaseOrdersController {
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({ name: 'search', required: false, type: String, example: 'PO-2026' })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    example: 'PO-2026',
+  })
   @ApiQuery({
     name: 'status',
     required: false,
     enum: ['DRAFT', 'PENDING', 'APPROVED', 'RECEIVED', 'CANCELLED'],
   })
-  @ApiQuery({ name: 'supplierId', required: false, type: String, format: 'uuid' })
-  @ApiQuery({ name: 'warehouseId', required: false, type: String, format: 'uuid' })
+  @ApiQuery({
+    name: 'supplierId',
+    required: false,
+    type: String,
+    format: 'uuid',
+  })
+  @ApiQuery({
+    name: 'warehouseId',
+    required: false,
+    type: String,
+    format: 'uuid',
+  })
   @ApiOkResponse({ type: PurchaseOrderPaginatedResponseDto })
   public async getPaginatedPurchaseOrders(
     @Query() getPurchaseOrderQueryDto: GetPurchaseOrderQueryDto,
@@ -100,7 +116,7 @@ export class PurchaseOrdersController {
   @Permissions(PERMISSION_CODES.PURCHASES_MODIFY)
   @ApiParam({ name: 'purchaseOrderId', format: 'uuid' })
   @ApiOperation({ summary: 'Update purchase order status' })
-  @ApiOkResponse({ type: PurchaseOrderMessageResponseDto })
+  @ApiOkResponse({ type: PurchaseOrderStatusUpdateResponseDto })
   public async updatePurchaseOrderStatus(
     @Body() updatePurchaseOrderStatusDto: UpdatePurchaseOrderStatusDto,
     @Param('purchaseOrderId', ParseUUIDPipe) purchaseOrderId: string,

@@ -23,6 +23,7 @@ import {
   CreateWarehouseDto,
   GetWarehouseParamsDto,
   UpdateWarehouseDto,
+  WarehouseDetailResponseDto,
   WarehouseMessageResponseDto,
   WarehouseOptionDto,
   WarehousePaginatedResponseDto,
@@ -110,6 +111,21 @@ export class WarehousesController {
     return await this.warehouseService.deleteWarehouse(
       warehouseId,
       user.tenantId,
+    );
+  }
+
+  @Get(':warehouseId')
+  @Permissions(PERMISSION_CODES.INVENTORY_READ)
+  @ApiParam({ name: 'warehouseId', format: 'uuid' })
+  @ApiOperation({ summary: 'Get warehouse details' })
+  @ApiOkResponse({ type: WarehouseDetailResponseDto })
+  public async getWarehouseDetails(
+    @Param('warehouseId', ParseUUIDPipe) warehouseId: string,
+    @CurrentUser('tenantId') tenantId: string,
+  ) {
+    return await this.warehouseService.getWarehouseDetails(
+      warehouseId,
+      tenantId,
     );
   }
 }
