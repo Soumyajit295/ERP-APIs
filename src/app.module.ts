@@ -20,6 +20,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { WarehousesModule } from './modules/warehouses/warehouses.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { PurchaseOrdersModule } from './modules/purchase-orders/purchase-orders.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 @Module({
   imports: [
@@ -38,7 +39,8 @@ import { PurchaseOrdersModule } from './modules/purchase-orders/purchase-orders.
     ProductsModule,
     WarehousesModule,
     SuppliersModule,
-    PurchaseOrdersModule
+    PurchaseOrdersModule,
+    InventoryModule
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseService, UsersRepository,TenantRepository,PermissionRepository,RefreshTokensRepository],

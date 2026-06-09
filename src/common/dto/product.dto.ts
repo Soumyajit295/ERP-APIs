@@ -46,6 +46,13 @@ export class CreateProductDto {
   @Min(0)
   sellingPrice!: number;
 
+  @ApiPropertyOptional({ minimum: 0, default: 10, example: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  reorderLevel?: number;
+
   @ApiProperty({ enum: ProductStatus, example: ProductStatus.ACTIVE })
   @IsEnum(ProductStatus)
   status!: ProductStatus;
@@ -112,6 +119,9 @@ export class ProductResponseDto {
 
   @ApiProperty({ example: 1499 })
   sellingPrice!: number;
+
+  @ApiProperty({ example: 10 })
+  reorderLevel!: number;
 
   @ApiProperty({ example: 'Electronics' })
   categoryName!: string;
