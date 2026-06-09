@@ -11,6 +11,7 @@ export interface ProductItem{
     status: string;
     purchasePrice: number;
     sellingPrice: number;
+    reorderLevel: number;
     categoryName: string;
     description?: string
 }
@@ -22,7 +23,7 @@ export class ProductRepository {
 
     async createProduct(createProductDto: CreateProductDto,tenantId: string){
         try {
-            const {categoryId,name,sku,barcode,purchasePrice,sellingPrice,status,description} = createProductDto
+            const {categoryId,name,sku,barcode,purchasePrice,sellingPrice,reorderLevel,status,description} = createProductDto
 
             const createQuery = `
                 INSERT INTO products(
@@ -33,10 +34,11 @@ export class ProductRepository {
                     barcode,
                     purchase_price,
                     selling_price,
+                    reorder_level,
                     description,
                     status
                 )
-                VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
+                VALUES($1,$2,$3,$4,$5,$6,$7,COALESCE($8, 10),$9,$10)
                 RETURNING product_id
             `
             const values=[
@@ -47,6 +49,7 @@ export class ProductRepository {
                 barcode,
                 purchasePrice,
                 sellingPrice,
+                reorderLevel,
                 description,
                 status
             ]
@@ -104,6 +107,7 @@ export class ProductRepository {
                     p.barcode,
                     p.purchase_price,
                     p.selling_price,
+                    p.reorder_level,
                     p.status,
                     c.category_name
                 FROM products p
@@ -180,6 +184,7 @@ export class ProductRepository {
                     p.status,
                     p.purchase_price,
                     p.selling_price,
+                    p.reorder_level,
                     c.category_name,
                     p.description
                 FROM products p
@@ -213,6 +218,7 @@ export class ProductRepository {
             categoryId: 'category_id',
             purchasePrice: 'purchase_price',
             sellingPrice: 'selling_price',
+            reorderLevel: 'reorder_level',
             status: 'status',
             description: 'description'
         }
@@ -295,6 +301,7 @@ export class ProductRepository {
             status: row.status,
             purchasePrice: Number(row.purchase_price),
             sellingPrice: Number(row.selling_price),
+            reorderLevel: Number(row.reorder_level),
             categoryName: row.category_name,
             description: row.description
         }
