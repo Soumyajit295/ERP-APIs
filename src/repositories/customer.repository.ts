@@ -220,6 +220,29 @@ export class CustomerRepository {
     }
   }
 
+  async getCustomerById(customerId: string,tenantId: string){
+    try {
+      const customerQuery = `
+        SELECT 
+          c.customer_id
+        FROM customers c
+        WHERE c.customer_id = $1
+          AND c.tenant_id = $2
+          AND c.deleted_at IS NULL
+      `;
+
+      const customerValues = [customerId,tenantId]
+
+      const customerResult = await this.databaseService.query(customerQuery,customerValues)
+
+      if(customerResult?.rows?.length === 0) return null
+
+      return customerResult.rows[0]?.customer_id
+    } catch (error) {
+      throw new InternalServerErrorException('Internal server error, while fetching customer')
+    }
+  }
+
   private mapRowToCustomer(row: any): CustomerResponse {
     return {
       customerId: row.customer_id,
