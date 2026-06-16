@@ -164,3 +164,11 @@ export class ProductMessageResponseDto {
   @ApiProperty({ example: 'Product created successfully' })
   message!: string;
 }
+
+export class ProductOptionDto {
+  @ApiProperty({ example: 'Product 1' })
+  label!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  value!: string;
+}

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
-import { CreateSalesOrderDto, UpdateSalesOrderStatusDto } from "src/common/dto/sales-order.dto";
+import { CreateSalesOrderDto, GetSalesOrderQueryDto, SalesOrderDashboardResponseDto, SalesOrderItemsDto, SalesOrderItemsResponseDto, SalesOrderListResponseDto, SalesOrderPaginatedResponseDto, UpdateSalesOrderStatusDto } from "src/common/dto/sales-order.dto";
 import { DatabaseService } from "src/database/database.service";
 import { CustomerRepository } from "./customer.repository";
 import { SalesOrderStatus } from "src/common/enums/sales-order.enum";
@@ -357,6 +357,7 @@ export class SalesOrdresRepository {
             );
         }
     }
+
     async updateSalesOrderStatus(
         updateSalesOrderDto: UpdateSalesOrderStatusDto,
         salesOrderId: string,
@@ -492,14 +493,232 @@ export class SalesOrdresRepository {
         }
     }
 
+    async getPaginatedSalesOrders(getSalesOrderDto: GetSalesOrderQueryDto,tenantId: string): Promise<SalesOrderPaginatedResponseDto>{
+        const {
+            page = 1,
+            limit = 10,
+            customerId,
+            status,
+            search
+        } = getSalesOrderDto
 
-    private mapRowToSalesOrderProducts(row: any){
+        const currentPage = Math.max(Number(page),1)
+        const pageLimit = Math.min(Math.max(Number(limit),1),100)
+        const offset = (currentPage - 1) * pageLimit
+        const customerIdQuery = customerId ?? null
+        const statusQuery = status ?? null
+        const searchQuery = search ?? null
+
+        try {
+            const countQuery = `
+                SELECT COUNT(*)::INT AS total
+                FROM sales_orders so
+                WHERE so.tenant_id = $1
+                  AND so.deleted_at IS NULL
+                  AND(
+                    $2::uuid IS NULL 
+                    OR so.customer_id = $2
+                  )
+                  AND(
+                    $3::text IS NULL
+                    OR so.status = $3
+                  )
+                  AND(
+                    $4::text IS NULL
+                    OR so.so_number ILIKE '%' || $4 || '%'
+                  )
+            
+            `;
+    
+            const countValues = [tenantId,customerIdQuery,statusQuery,searchQuery]
+    
+            const salesOrderQuery = `
+                SELECT 
+                    so.so_id,
+                    so.so_number,
+                    c.customer_name,
+                    w.warehouse_name,
+                    so.order_date,
+                    so.status
+                FROM sales_orders so
+                JOIN customers c ON c.customer_id = so.customer_id
+                JOIN warehouses w ON w.warehouse_id = so.warehouse_id
+                WHERE so.tenant_id = $1
+                    AND so.deleted_at IS NULL
+                    AND(
+                        $4::uuid IS NULL 
+                        OR so.customer_id = $4
+                    )
+                    AND(
+                        $5::text IS NULL
+                        OR so.status = $5
+                    )
+                    AND(
+                        $6::text IS NULL
+                        OR so.so_number ILIKE '%' || $6 || '%'
+                    )
+                ORDER BY so.created_at
+                LIMIT $2
+                OFFSET $3
+            `;
+    
+            const salesOrderValues = [tenantId,pageLimit,offset,customerIdQuery,statusQuery,searchQuery]
+    
+            const [countResult,salesOrderResult] = await Promise.all([
+                this.databaseService.query(countQuery,countValues),
+                this.databaseService.query(salesOrderQuery,salesOrderValues)
+            ])
+    
+            const total = countResult?.rows[0]?.total
+            const totalPages = Math.ceil(total / pageLimit)
+    
+            return {
+                records: salesOrderResult?.rows?.map((row: any) => this.mapRowToSalesOrderListResponse(row)),
+                meta: {
+                    page: currentPage,
+                    limit: pageLimit,
+                    total,
+                    totalPages
+                }
+            }
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error, while fetching the sales orders')
+        }
+    }
+
+    async getSalesOrderDashboard(tenantId: string,salesOrderId: string): Promise<SalesOrderDashboardResponseDto>{
+        try {
+            const query = `
+                SELECT 
+                    so.so_id,
+                    so.so_number,
+                    so.order_date,
+                    (
+                        SELECT COALESCE(SUM(soi.line_total), 0)::float
+                        FROM sales_order_items soi
+                        WHERE soi.so_id = so.so_id
+                    ) AS sales_order_total_price,
+                    so.status,
+                    c.customer_name,
+                    c.phone,
+                    c.email,
+                    w.warehouse_name,
+                    w.address,
+                    w.contact_person,
+                    w.phone AS warehouse_phone
+                FROM sales_orders so
+                JOIN customers c ON c.customer_id = so.customer_id
+                JOIN warehouses w ON w.warehouse_id = so.warehouse_id
+                WHERE so.so_id = $1
+                    AND so.tenant_id = $2
+                    AND so.deleted_at IS NULL
+            `;
+
+            const values = [salesOrderId,tenantId]
+
+            const result = await this.databaseService.query(query,values)
+
+            if(result?.rows?.length === 0){
+                throw new BadRequestException('Sales order not found')
+            }
+
+            return this.mapRowToSalesOrderDashboardData(result.rows[0])
+
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error, while fetching sales order dashboard data')
+        }
+    }
+
+    async getSalesOrderItemsDeatils(salesOrderId: string,tenantId: string): Promise<SalesOrderItemsResponseDto>{
+        try {
+            const query = `
+                SELECT 
+                    p.product_name,
+                    soi.quantity,
+                    soi.selling_price,
+                    soi.discount,
+                    soi.line_total
+                FROM sales_order_items soi
+                JOIN products p ON soi.product_id = p.product_id AND p.deleted_at IS NULL
+                WHERE soi.so_id = $1
+                    AND soi.tenant_id = $2
+            `;
+
+            const values = [salesOrderId,tenantId]
+
+            const result = await this.databaseService.query(query,values)
+
+            const salesOrderItems = result?.rows?.map((row: any) => this.mapRowToSalesOrderProducts(row))
+
+            return {
+                items: salesOrderItems,
+                totalPrice: salesOrderItems.reduce((acc,curr)=>{
+                    return acc + curr.totalPrice;
+                },0)
+            }
+
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error, while fetching the order items')
+        }
+    }
+
+    async deleteSalesOrder(salesOrderId: string,tenantId: string){
+        try {
+            const query = `
+                UPDATE sales_orders so
+                SET so.deleted_at = NOW()
+                WHERE so.so_id = $1
+                AND so.tenant_id = $2
+                AND so.deleted_at IS NULL
+            `;
+
+            await this.databaseService.query(query,[salesOrderId,tenantId])
+
+            return {message: 'Sales order deleted successfully'}
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error, while deleting sales order')
+        }
+    }
+
+    private mapRowToSalesOrderListResponse(row: any): SalesOrderListResponseDto{
         return {
-            productId: row.product_id,
+            salesOrderId: row.so_id,
+            salesOrderNumber: row.so_number,
+            customerName: row.customer_name,
+            warehouseName: row.warehouse_name,
+            status: row.status,
+            orderDate: row.order_date
+        }
+    }
+
+    private mapRowToSalesOrderDashboardData(row: any): SalesOrderDashboardResponseDto {
+        return {
+            salesOrderId: row.so_id,
+            salesOrderNumber: row.so_number,
+            orderDate: row.order_date,
+            orderStatus: row.status,
+            totalAmount: row.sales_order_total_price,
+            customerInfo: {
+                customerName: row.customer_name,
+                customerPhone: row.phone,
+                customerEmail: row.email
+            },
+            warehouseInfo: {
+                warehouseName: row.warehouse_name,
+                warehouseAddress: row.address,
+                warehouseContactPerson: row.contact_person,
+                warehousePhone: row.warehouse_phone
+            }
+        }
+    }
+
+    private mapRowToSalesOrderProducts(row: any): SalesOrderItemsDto{
+        return {
+            productName: row.product_name,
             quantity: row.quantity,
-            sellingPrice: row.selling_price,
+            unitPrice: row.selling_price,
             discount: row.discount,
-            lineTotal: row.line_total
+            totalPrice: row.line_total
         }
     }
 }

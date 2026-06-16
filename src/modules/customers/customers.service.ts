@@ -23,4 +23,8 @@ export class CustomersService {
     public async deleteCustomer(customerId: string,tenantId: string){
         return await this.customerRespository.deletedCustomer(customerId,tenantId)
     }
+
+    public async getCustomerOptions(tenantId: string){
+        return await this.customerRespository.getCustomerOptions(tenantId)
+    }
 }

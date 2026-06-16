@@ -128,3 +128,11 @@ export class CustomerMessageResponseDto {
   @ApiProperty({ example: 'Customer created successfully' })
   message!: string;
 }
+
+export class CustomerOptionDto {
+  @ApiProperty({ example: 'Customer 1' })
+  label!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  value!: string;
+}

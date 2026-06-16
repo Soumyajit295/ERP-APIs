@@ -25,6 +25,7 @@ import {
   CreateCustomerDto,
   CustomerListResponseDto,
   CustomerMessageResponseDto,
+  CustomerOptionDto,
   GetCustomerQueryDto,
   UpdateCustomerDto,
 } from 'src/common/dto/customer.dto';
@@ -97,5 +98,14 @@ export class CustomersController {
     @CurrentUser() user: CurrentUserPayload,
   ) {
     return await this.customerService.deleteCustomer(customerId, user.tenantId);
+  }
+
+  @Get('options')
+  @ApiOperation({
+    summary: 'List customer options in the authenticated tenant',
+  })
+  @ApiOkResponse({ type: [CustomerOptionDto] })
+  public async wareHouseOptions(@CurrentUser() user: CurrentUserPayload) {
+    return await this.customerService.getCustomerOptions(user.tenantId);
   }
 }

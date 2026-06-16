@@ -6,6 +6,7 @@ import {
     GetProductQueryDto,
     ProductCategoryOptionDto,
     ProductMessageResponseDto,
+    ProductOptionDto,
     ProductPaginatedResponseDto,
     ProductResponseDto,
     UpdateProductDto,
@@ -62,6 +63,14 @@ export class ProductsController {
         return await this.productService.getProductsCategory(user.tenantId)
     }
 
+    @Get('options')
+    @Permissions(PERMISSION_CODES.PRODUCT_READ)
+    @ApiOperation({ summary: 'List product options in the authenticated tenant' })
+    @ApiOkResponse({ type: [ProductOptionDto] })
+    public async wareHouseOptions(@CurrentUser() user: CurrentUserPayload) {
+        return await this.productService.getProductOptions(user.tenantId);
+    }
+
     @Get(':productId')
     @Permissions(PERMISSION_CODES.PRODUCT_READ)
     @ApiParam({ name: 'productId', format: 'uuid' })
@@ -98,4 +107,5 @@ export class ProductsController {
     ){
         return await this.productService.deleteProduct(productId,user.tenantId)
     }
+
 }
