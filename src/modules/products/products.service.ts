@@ -31,4 +31,8 @@ export class ProductsService {
     public async getProductsCategory(tenantId: string){
         return await this.productRepository.getProductsCategory(tenantId)
     }
+
+    public async getProductOptions(tenantId: string){
+        return await this.productRepository.getProductOptions(tenantId)
+    }
 }

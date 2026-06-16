@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
-import { CreateProductDto, GetProductQueryDto, UpdateProductDto } from "src/common/dto/product.dto";
+import { CreateProductDto, GetProductQueryDto, ProductOptionDto, UpdateProductDto } from "src/common/dto/product.dto";
 import { PaginatedResponseDto } from "src/common/dto/paginationResponse.dto";
 import { DatabaseService } from "src/database/database.service";
 
@@ -289,6 +289,32 @@ export class ProductRepository {
             return result.rows.map((row) => this.mapRowToProductCategory(row))
         } catch (error) {
             throw new InternalServerErrorException('Internal server error, while fetching products categories')
+        }
+    }
+
+    async getProductOptions(tenantId: string): Promise<ProductOptionDto[]>{
+        try {
+            const query = `
+                SELECT
+                    p.product_name,
+                    p.product_id
+                FROM products p
+                WHERE p.tenant_id = $1
+                AND p.deleted_at IS NULL
+            `;
+
+            const result = await this.databaseService.query(query,[tenantId])
+
+            const options = result?.rows?.map((row: any) => {
+                return {
+                    label: row.product_name,
+                    value: row.product_id
+                }
+            })
+
+            return options
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error, while fetching product options')
         }
     }
 

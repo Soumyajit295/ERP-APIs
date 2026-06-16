@@ -6,6 +6,7 @@ import {
 import {
   CreateCustomerDto,
   CustomerListResponseDto,
+  CustomerOptionDto,
   CustomerResponse,
   GetCustomerQueryDto,
   UpdateCustomerDto,
@@ -240,6 +241,33 @@ export class CustomerRepository {
       return customerResult.rows[0]?.customer_id
     } catch (error) {
       throw new InternalServerErrorException('Internal server error, while fetching customer')
+    }
+  }
+
+  async getCustomerOptions(tenantId: string): Promise<CustomerOptionDto[]>{
+    try {
+      const query = `
+        SELECT 
+          c.customer_id,
+          c.customer_name
+        FROM customers c
+        WHERE c.tenant_id = $1
+        AND c.deleted_at IS NULL
+      `;
+
+      const result = await this.databaseService.query(query,[tenantId])
+
+      const options = result?.rows?.map((row: any) => {
+        return {
+          label: row.customer_name,
+          value: row.customer_id
+        }
+      })
+
+      return options
+
+    } catch (error) {
+      throw new InternalServerErrorException('Internal server error, while fetching customers')
     }
   }
 
