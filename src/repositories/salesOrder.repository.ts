@@ -520,8 +520,8 @@ export class SalesOrdresRepository {
                     OR so.customer_id = $2
                   )
                   AND(
-                    $3::text IS NULL
-                    OR so.status = $3
+                    $3::sales_order_status_enum IS NULL
+                    OR so.status = $3::sales_order_status_enum
                   )
                   AND(
                     $4::text IS NULL
@@ -550,8 +550,8 @@ export class SalesOrdresRepository {
                         OR so.customer_id = $4
                     )
                     AND(
-                        $5::text IS NULL
-                        OR so.status = $5
+                        $5::sales_order_status_enum IS NULL
+                        OR so.status = $5::sales_order_status_enum
                     )
                     AND(
                         $6::text IS NULL
@@ -653,7 +653,7 @@ export class SalesOrdresRepository {
             return {
                 items: salesOrderItems,
                 totalPrice: salesOrderItems.reduce((acc,curr)=>{
-                    return acc + curr.totalPrice;
+                    return acc + Number(curr.totalPrice);
                 },0)
             }
 
@@ -716,9 +716,9 @@ export class SalesOrdresRepository {
         return {
             productName: row.product_name,
             quantity: row.quantity,
-            unitPrice: row.selling_price,
-            discount: row.discount,
-            totalPrice: row.line_total
+            unitPrice: Number(row.selling_price),
+            discount: Number(row.discount),
+            totalPrice: Number(row.line_total)
         }
     }
 }
