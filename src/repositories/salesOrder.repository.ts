@@ -151,8 +151,8 @@ export class SalesOrdresRepository {
     ) {
         const query = `
             SELECT
-            soi.product_id,
-            soi.quantity
+                soi.product_id,
+                soi.quantity,
             FROM sales_order_items soi
             WHERE soi.so_id = $1
         `;
@@ -493,6 +493,27 @@ export class SalesOrdresRepository {
         }
     }
 
+    async getSalesOrderById(salesOrderId: string,tenantId: string){
+        try {
+            const query = `
+                SELECT 
+                    so.so_id
+                FROM sales_orders so
+                WHERE so.so_id = $1
+                    AND so.tenant_id = $2
+                    AND so.deleted_at IS NULL
+            `;
+
+            const result = await this.databaseService.query(query,[salesOrderId,tenantId])
+
+            if(result?.rows?.length === 0) return null
+
+            return result?.rows[0]?.so_id
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error while fetching sales order')
+        }
+    }
+
     async getPaginatedSalesOrders(getSalesOrderDto: GetSalesOrderQueryDto,tenantId: string): Promise<SalesOrderPaginatedResponseDto>{
         const {
             page = 1,
@@ -629,7 +650,7 @@ export class SalesOrdresRepository {
         }
     }
 
-    async getSalesOrderItemsDeatils(salesOrderId: string,tenantId: string): Promise<SalesOrderItemsResponseDto>{
+    async getSalesOrderItemsDetails(salesOrderId: string,tenantId: string): Promise<SalesOrderItemsResponseDto>{
         try {
             const query = `
                 SELECT 
