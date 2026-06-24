@@ -23,6 +23,7 @@ import { PurchaseOrdersModule } from './modules/purchase-orders/purchase-orders.
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { SalesOrdersModule } from './modules/sales-orders/sales-orders.module';
+import { InvoiceModule } from './modules/invoice/invoice.module';
 
 
 @Module({
@@ -45,7 +46,8 @@ import { SalesOrdersModule } from './modules/sales-orders/sales-orders.module';
     PurchaseOrdersModule,
     InventoryModule,
     CustomersModule,
-    SalesOrdersModule
+    SalesOrdersModule,
+    InvoiceModule
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseService, UsersRepository,TenantRepository,PermissionRepository,RefreshTokensRepository],

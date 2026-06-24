@@ -15,6 +15,7 @@ import {
   SalesOrderDashboardResponseDto,
   SalesOrderItemsResponseDto,
   SalesOrderMessageResponseDto,
+  SalesOrderOptionDto,
   SalesOrderPaginatedResponseDto,
   UpdateSalesOrderStatusDto,
 } from 'src/common/dto/sales-order.dto';
@@ -83,15 +84,23 @@ export class SalesOrdersController {
         return await this.salesOrderService.getSalesOrderDashboard(salesOrderId, tenantId)
     }
 
-    @Get('items/:salesOrderId')
-    @Permissions(PERMISSION_CODES.SALES_READ)
-    @ApiOperation({ summary: 'Get sales order items' })
-    @ApiParam({ name: 'salesOrderId', format: 'uuid' })
-    @ApiOkResponse({ type: SalesOrderItemsResponseDto })
-    public async getSalesOrderItems(
-        @Param('salesOrderId', ParseUUIDPipe) salesOrderId: string,
-        @CurrentUser('tenantId') tenantId: string
-    ){
-        return await this.salesOrderService.getSalesOrderItems(salesOrderId, tenantId)
-    }
+  @Get('items/:salesOrderId')
+  @Permissions(PERMISSION_CODES.SALES_READ)
+  @ApiOperation({ summary: 'Get sales order items' })
+  @ApiParam({ name: 'salesOrderId', format: 'uuid' })
+  @ApiOkResponse({ type: SalesOrderItemsResponseDto })
+  public async getSalesOrderItems(
+    @Param('salesOrderId', ParseUUIDPipe) salesOrderId: string,
+    @CurrentUser('tenantId') tenantId: string
+  ){
+    return await this.salesOrderService.getSalesOrderItems(salesOrderId, tenantId)
+  }
+
+  @Get('options')
+  @Permissions(PERMISSION_CODES.SALES_READ)
+  @ApiOperation({ summary: 'List sales order options in the authenticated tenant' })
+  @ApiOkResponse({ type: [SalesOrderOptionDto] })
+  public async salesOrderOptions(@CurrentUser('tenantId') tenantId: string) {
+    return await this.salesOrderService.salesOrderOptions(tenantId)
+  }
 }

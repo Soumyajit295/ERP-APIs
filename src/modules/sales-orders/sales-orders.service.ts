@@ -25,6 +25,10 @@ export class SalesOrdersService {
     }
 
     public async getSalesOrderItems(salesOrderId: string,tenantId: string){
-        return await this.salesOrderRepository.getSalesOrderItemsDeatils(salesOrderId,tenantId)
+        return await this.salesOrderRepository.getSalesOrderItemsDetails(salesOrderId,tenantId)
+    }
+
+    public async salesOrderOptions(tenantId: string){
+        return await this.salesOrderRepository.salesOrderOptions(tenantId)
     }
 }
