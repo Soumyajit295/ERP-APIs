@@ -224,3 +224,11 @@ export class SalesOrderItemsResponseDto {
   @ApiProperty({ example: 15000.00 })
   totalPrice!: number
 }
+
+export class SalesOrderOptionDto {
+  @ApiProperty({ example: 'SO-2026-1780829766072' })
+  label!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  value!: string;
+}

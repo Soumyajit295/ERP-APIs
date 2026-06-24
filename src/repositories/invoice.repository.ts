@@ -286,11 +286,11 @@ export class InvoiceRepository {
             values.push(invoiceId,tenantId)
 
             const updateQuery = `
-                UPDATE invoices i
-                SET ${updates.join(', ')}, i.updated_at = NOW()
-                WHERE i.invoice_id = $${index}
-                AND i.tenant_id = $${index+1}
-                AND i.deleted_at IS NULL
+                UPDATE invoices
+                SET ${updates.join(', ')}, updated_at = NOW()
+                WHERE invoice_id = $${index}
+                AND tenant_id = $${index+1}
+                AND deleted_at IS NULL
             `;
 
             await this.databaseService.query(updateQuery,values)
@@ -369,7 +369,7 @@ export class InvoiceRepository {
             return {
                 items, 
                 subTotal: items.reduce((acc,curr) => {
-                    return acc + curr.total
+                    return acc + Number(curr.total)
                 },0)
             }
 
@@ -414,8 +414,8 @@ export class InvoiceRepository {
             customerEmail: row.email,
             issueDate: row.issue_date,
             dueDate: row.due_date,
-            totalAmount: row.total_amount,
-            paidAmount: row.paid_amount,
+            totalAmount: Number(row.total_amount),
+            paidAmount: Number(row.paid_amount),
             status: row.status
         }
     }
@@ -426,9 +426,9 @@ export class InvoiceRepository {
             invoiceNumber: row.invoice_number,
             issueDate: row.issue_date,
             dueDate: row.due_date,
-            totalAmount: row.total_amount,
-            paidAmount: row.paid_amount,
-            balanceAmount: row.balance_amount,
+            totalAmount: Number(row.total_amount),
+            paidAmount: Number(row.paid_amount),
+            balanceAmount: Number(row.balance_amount),
             status: row.status,
             customerInformation: {
                 customerName: row.customer_name,
@@ -440,10 +440,10 @@ export class InvoiceRepository {
     private mapRowToInvoiceItems(row: any): InvoiceItems {
         return {
             productName: row.product_name,
-            quantity: row.quantity,
-            unitPrice: row.selling_price,
-            discount: row.discount,
-            total: row.line_total 
+            quantity: Number(row.quantity),
+            unitPrice: Number(row.selling_price),
+            discount: Number(row.discount),
+            total: Number(row.line_total) 
         }
     }
 
@@ -453,8 +453,8 @@ export class InvoiceRepository {
             invoiceNumber: row.invoice_number,
             issueDate: row.issue_date,
             dueDate: row.due_date,
-            totalAmount: row.total_amount,
-            paidAmount: row.paid_amount,
+            totalAmount: Number(row.total_amount),
+            paidAmount: Number(row.paid_amount),
             status: row.status
         }
     }

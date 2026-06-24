@@ -152,7 +152,7 @@ export class SalesOrdresRepository {
         const query = `
             SELECT
                 soi.product_id,
-                soi.quantity,
+                soi.quantity
             FROM sales_order_items soi
             WHERE soi.so_id = $1
         `;
@@ -182,7 +182,6 @@ export class SalesOrdresRepository {
             WHERE tenant_id = $1
             AND warehouse_id = $2
             AND product_id = $3
-            AND deleted_at IS NULL
         `;
 
         const result = await client.query(
@@ -230,7 +229,6 @@ export class SalesOrdresRepository {
             WHERE tenant_id = $2
             AND warehouse_id = $3
             AND product_id = $4
-            AND deleted_at IS NULL
         `;
 
         const result = await client.query(
@@ -266,7 +264,6 @@ export class SalesOrdresRepository {
             WHERE tenant_id = $2
             AND warehouse_id = $3
             AND product_id = $4
-            AND deleted_at IS NULL
         `;
 
         const result = await client.query(
@@ -303,7 +300,6 @@ export class SalesOrdresRepository {
             WHERE tenant_id = $2
             AND warehouse_id = $3
             AND product_id = $4
-            AND deleted_at IS NULL
         `;
 
         const result = await client.query(
@@ -488,6 +484,8 @@ export class SalesOrdresRepository {
             if (error instanceof BadRequestException) {
                 throw error;
             }
+
+            console.log("Error : ",error)
 
             throw new InternalServerErrorException('Internal server error while updating sales order status');
         }
@@ -698,6 +696,28 @@ export class SalesOrdresRepository {
             return {message: 'Sales order deleted successfully'}
         } catch (error) {
             throw new InternalServerErrorException('Internal server error, while deleting sales order')
+        }
+    }
+
+    async salesOrderOptions(tenantId: string){
+        try {
+            const query = `
+                SELECT 
+                    so.so_number AS label,
+                    so.so_id AS value
+                FROM sales_orders so
+                WHERE so.tenant_id = $1
+                AND so.deleted_at IS NULL
+            `;
+
+            const result = await this.databaseService.query(query,[tenantId])
+
+            if(result?.rows?.length === 0) return []
+
+            return result?.rows
+
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error while fetching sales order options')
         }
     }
 
