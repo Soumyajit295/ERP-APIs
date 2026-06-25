@@ -226,7 +226,9 @@ export class InvoiceRepository {
                 SELECT 
                     i.invoice_id,
                     i.issue_date,
-                    i.due_date
+                    i.due_date,
+                    i.total_amount,
+                    i.balance_amount
                 FROM invoices i
                 WHERE i.invoice_id = $1
                 AND i.tenant_id = $2
@@ -240,7 +242,9 @@ export class InvoiceRepository {
             return {
                 invoiceId: result?.rows[0]?.invoice_id,
                 issueDate: result?.rows[0]?.issue_date,
-                dueDate: result?.rows[0]?.due_date
+                dueDate: result?.rows[0]?.due_date,
+                totalAmount: result?.rows[0].total_amount,
+                balanceAmount: result?.rows[0].balance_amount
             }
 
         } catch (error) {
@@ -403,6 +407,35 @@ export class InvoiceRepository {
 
         } catch (error) {
             throw new InternalServerErrorException('Internal server error while fetching invoice opf sales order')
+        }
+    }
+
+    async updateInvoicePaymentStatus(invoiceId: string,tenantId: string,paidAmount: number,status: string,client: any){
+        try {
+             const query = `
+                UPDATE invoices
+                SET paid_amount = paid_amount + $1,
+                    balance_amount = balance_amount - $1,
+                    status = $2,
+                    updated_at = NOW()
+                WHERE invoice_id = $3
+                AND tenant_id = $4
+                AND deleted_at IS NULL
+                AND balance_amount >= $1
+            `;
+
+            const result = await client.query(query,[paidAmount,status,invoiceId,tenantId])
+
+            if (result.rowCount === 0) {
+                throw new BadRequestException('Payment amount exceeds invoice balance or invoice not found')
+            }
+
+            return result;
+        } catch (error) {
+            if (error instanceof BadRequestException) {
+                throw error
+            }
+            throw new InternalServerErrorException('Internal server error while updating status of invoice')
         }
     }
 

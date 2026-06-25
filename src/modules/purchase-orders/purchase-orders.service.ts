@@ -58,4 +58,8 @@ export class PurchaseOrdersService {
       tenantId,
     );
   }
+
+  public async getPurchaseOrderById(purchaseorderId: string,tenantId: string){
+    return await this.purchaseOrderRepository.getPurchaseOrderById(purchaseorderId,tenantId)
+  }
 }

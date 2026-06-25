@@ -477,6 +477,73 @@ export class PurchaseOrderRepository {
     }
   }
 
+  async getPurchaseOrderById(purchaseOrderId: string,tenantId: string){
+    try {
+      const query = `
+        SELECT 
+          po.po_id,
+          po.total_amount,
+          po.paid_amount,
+          po.balance_amount
+        FROM purchase_orders po
+        WHERE po.po_id = $1
+        AND po.tenant_id = $2
+        AND po.deleted_at IS NULL
+      `;
+
+      const result = await this.databaseService.query(query,[purchaseOrderId,tenantId])
+
+      if(result.rows.length === 0){
+        throw new BadRequestException('Purchase order not found')
+      }
+
+      return this.mapRowToPurchaseOrderById(result.rows[0])
+    } catch (error) {
+        if(error instanceof BadRequestException){
+          throw error
+        }      
+        throw new InternalServerErrorException('Internal server error while fetching purchase order by id')
+    }
+  }
+
+  async updatePurchaseOrderPaymentStatus(purchaseOrderId: string,tenantId: string,paidAmount: number,status: string,client: any){
+    try {
+      const query = `
+          UPDATE purchase_orders
+          SET paid_amount = paid_amount + $1,
+              balance_amount = balance_amount - $1,
+              payment_status = $2,
+              updated_at = NOW()
+          WHERE po_id = $3
+          AND tenant_id = $4
+          AND deleted_at IS NULL
+          AND balance_amount >= $1
+      `;
+
+      const result = await client.query(query,[paidAmount,status,purchaseOrderId,tenantId])
+
+      if (result.rowCount === 0) {
+        throw new BadRequestException('Payment amount exceeds purchase order balance or purchase order not found')
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error
+      }
+      throw new InternalServerErrorException('Internal server error while updaing the putrchase order payment status')
+    }
+  }
+
+  private mapRowToPurchaseOrderById(row: any){
+    return{
+      purchaseOrderId: row.po_id,
+      totalAmount: Number(row.total_amount),
+      paidAmount: Number(row.paid_amount),
+      balanceAmount: Number(row.balance_amount)
+    }
+  }
+
   private mapRowToPurchaseOrder(row: any): PurchaseOrderListResponseDto {
     return {
       purchaseOrderId: row.po_id,
