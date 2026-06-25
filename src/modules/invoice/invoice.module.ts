@@ -9,6 +9,7 @@ import { SalesOrdersModule } from '../sales-orders/sales-orders.module';
 @Module({
   imports: [CustomersModule, SalesOrdersModule],
   controllers: [InvoiceController],
-  providers: [InvoiceService,InvoiceRepository,DatabaseService]
+  providers: [InvoiceService,InvoiceRepository,DatabaseService],
+  exports: [InvoiceService, InvoiceRepository]
 })
 export class InvoiceModule {}

@@ -31,4 +31,8 @@ export class InvoiceService {
     public async getInvoiceBySalesOrderId(salesOrderId: string, tenantId: string){
         return await this.invoiceRepository.getInvoiceBySalesOrder(salesOrderId, tenantId)
     }
+
+    public async getInvoiceById(invoiceId: string,tenantId: string){
+        return await this.invoiceRepository.getInvoiceById(invoiceId,tenantId)
+    }
 }
