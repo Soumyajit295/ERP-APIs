@@ -14,7 +14,7 @@ import {
   PurchaseOrderStatusUpdateResponseDto,
   UpdatePurchaseOrderStatusDto,
 } from 'src/common/dto/purchase-order.dto';
-import { PurchaseOrderStatus } from 'src/common/enums/purchase-order.enum';
+import { PaymentStatus, PurchaseOrderStatus } from 'src/common/enums/purchase-order.enum';
 import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
@@ -36,17 +36,25 @@ export class PurchaseOrderRepository {
         const purchaseOrderNumber = `PO-${new Date().getFullYear()}-${Date.now()}`;
 
         const purchaseOrderQuery = `
-                    INSERT INTO purchase_orders (
-                        tenant_id,
-                        po_number,
-                        supplier_id,
-                        warehouse_id,
-                        order_date,
-                        status
-                    )
-                    VALUES($1,$2,$3,$4,$5,$6)
-                    RETURNING po_id
-                `;
+            INSERT INTO purchase_orders (
+                tenant_id,
+                po_number,
+                supplier_id,
+                warehouse_id,
+                order_date,
+                status,
+                total_amount,
+                paid_amount,
+                balance_amount,
+                payment_status
+            )
+            VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+            RETURNING po_id
+        `;
+
+        const totalAmount = createPurchaseOrderDto.items.reduce((acc,curr) => {
+          return acc + ((Number(curr.quantity)) * (Number(curr.costPrice)))
+        },0)
 
         const purchaseOrderValues = [
           tenantId,
@@ -55,6 +63,10 @@ export class PurchaseOrderRepository {
           createPurchaseOrderDto.warehouseId,
           createPurchaseOrderDto.orderDate,
           createPurchaseOrderDto.status,
+          totalAmount,
+          0,
+          totalAmount,
+          PaymentStatus.UNPAID
         ];
 
         const purchaseOrderResult = await client.query(
@@ -68,16 +80,16 @@ export class PurchaseOrderRepository {
 
         for (const item of createPurchaseOrderDto.items) {
           const purchaseOrderItemQuery = `
-                        INSERT INTO purchase_order_items (
-                            po_id,
-                            product_id,
-                            quantity,
-                            cost_price,
-                            line_total
-                        )
-                        VALUES($1,$2,$3,$4,$5)
-                        RETURNING poi_id
-                    `;
+              INSERT INTO purchase_order_items (
+                  po_id,
+                  product_id,
+                  quantity,
+                  cost_price,
+                  line_total
+              )
+              VALUES($1,$2,$3,$4,$5)
+              RETURNING poi_id
+          `;
 
           const purchaseOrderItemsValues = [
             purchaseOrderResult.rows[0]?.po_id,
@@ -169,11 +181,9 @@ export class PurchaseOrderRepository {
                     s.supplier_name AS supplier_name,
                     w.warehouse_name AS warehouse_name,
                     po.status,
-                    (
-                        SELECT COALESCE(SUM(poi.line_total), 0)::float
-                        FROM purchase_order_items poi
-                        WHERE poi.po_id = po.po_id
-                    ) AS total_cost,
+                    po.total_amount::float AS total_cost,
+                    po.balance_amount::float AS balance_amount,
+                    po.payment_status,
                     po.order_date
                 FROM purchase_orders po
                 JOIN suppliers s ON s.supplier_id = po.supplier_id AND s.deleted_at IS NULL
@@ -422,12 +432,11 @@ export class PurchaseOrderRepository {
                     po.po_number AS purchase_order_number,
                     po.po_id AS purchase_order_id,
                     po.order_date AS purchase_order_date,
-                    (
-                        SELECT COALESCE(SUM(poi.line_total), 0)::float
-                        FROM purchase_order_items poi
-                        WHERE poi.po_id = po.po_id
-                    ) AS purchase_order_total_price,
+                    po.total_amount::float AS purchase_order_total_price,
+                    po.paid_amount::float AS paid_amount,
+                    po.balance_amount::float AS balance_amount,
                     po.status AS purchase_order_status,
+                    po.payment_status,
                     s.supplier_name AS supplier_name,
                     s.contact_person AS supplier_contact_person,
                     s.email AS supplier_email,
@@ -476,6 +485,8 @@ export class PurchaseOrderRepository {
       warehouseName: row.warehouse_name,
       status: row.status,
       totalCost: Number(row.total_cost),
+      balanceAmount: Number(row.balance_amount),
+      paymentStatus: row.payment_status,
       orderDate: row.order_date,
     };
   }
@@ -508,8 +519,11 @@ export class PurchaseOrderRepository {
       purchaseOrderId: row.purchase_order_id,
       purchaseOrderNumber: row.purchase_order_number,
       purchaseOrderStatus: row.purchase_order_status,
+      paymentStatus: row.payment_status,
       purchaseOrderDate: row.purchase_order_date,
       purchaseOrderTotalPrice: Number(row.purchase_order_total_price),
+      paidAmount: Number(row.paid_amount),
+      balanceAmount: Number(row.balance_amount),
       supplierInformation: {
         supplierName: row.supplier_name,
         supplierContactPerson: row.supplier_contact_person,

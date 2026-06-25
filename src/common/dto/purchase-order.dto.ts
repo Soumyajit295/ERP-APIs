@@ -14,7 +14,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { PurchaseOrderStatus } from '../enums/purchase-order.enum';
+import { PaymentStatus, PurchaseOrderStatus } from '../enums/purchase-order.enum';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -136,6 +136,15 @@ export class PurchaseOrderListResponseDto {
   @ApiProperty({ example: 602.5 })
   totalCost!: number;
 
+  @ApiProperty({ example: 602.5 })
+  balanceAmount!: number;
+
+  @ApiProperty({
+    enum: PaymentStatus,
+    example: PaymentStatus.UNPAID,
+  })
+  paymentStatus!: PaymentStatus;
+
   @ApiProperty({ example: '2026-06-07' })
   orderDate?: string;
 }
@@ -220,11 +229,23 @@ export class PurchaseOrderDeatilsResponseDto {
   })
   purchaseOrderStatus!: PurchaseOrderStatus;
 
+  @ApiProperty({
+    enum: PaymentStatus,
+    example: PaymentStatus.UNPAID,
+  })
+  paymentStatus!: PaymentStatus;
+
   @ApiProperty({ example: '2026-06-07' })
   purchaseOrderDate!: string;
 
   @ApiProperty({ example: 602.5 })
   purchaseOrderTotalPrice!: number;
+
+  @ApiProperty({ example: 0 })
+  paidAmount!: number;
+
+  @ApiProperty({ example: 602.5 })
+  balanceAmount!: number;
 
   @ApiProperty({ type: SupplierInformationDto })
   supplierInformation!: SupplierInformationDto;

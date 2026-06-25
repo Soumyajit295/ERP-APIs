@@ -5,3 +5,9 @@ export enum PurchaseOrderStatus {
   RECEIVED = 'RECEIVED',
   CANCELLED = 'CANCELLED',
 }
+
+export enum PaymentStatus {
+  UNPAID = 'UNPAID',
+  PARTIALLY_PAID = 'PARTIALLY_PAID',
+  PAID = 'PAID',
+}
