@@ -25,6 +25,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { SalesOrdersModule } from './modules/sales-orders/sales-orders.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { FinanceModule } from './modules/finance/finance.module';
 
 
 @Module({
@@ -49,7 +50,8 @@ import { PaymentsModule } from './modules/payments/payments.module';
     CustomersModule,
     SalesOrdersModule,
     InvoiceModule,
-    PaymentsModule
+    PaymentsModule,
+    FinanceModule
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseService, UsersRepository,TenantRepository,PermissionRepository,RefreshTokensRepository],
