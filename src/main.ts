@@ -7,7 +7,16 @@ import { PermissionGuard } from './modules/auth/permission.guard';
 import { setupSwagger } from './swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule,{
+    cors: {
+      origin: [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        ...(process.env.CORS_ORIGINS?.split(',').map(o => o.trim()) ?? []),
+      ].filter(Boolean),
+      credentials: true,
+    },
+  });
   app.use(cookieParser())
   app.useGlobalPipes(new ValidationPipe({
     transform: true,
