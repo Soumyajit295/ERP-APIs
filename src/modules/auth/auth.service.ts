@@ -114,7 +114,7 @@ export class AuthService {
                 },
             )
             await this.redisService.setData(`reset-password:${generateResetLinkDto.email}`,token,300)
-            await this.emailQueue.sendResetLink(generateResetLinkDto.email,`http://localhost:5173/reset-link?token=${token}`)
+            await this.emailQueue.sendResetLink(generateResetLinkDto.email,`http://localhost:5173/reset-password?token=${token}`)
             return {message: 'Reset link sent successfully'}
         } catch (error) {
             if (error instanceof HttpException) {
