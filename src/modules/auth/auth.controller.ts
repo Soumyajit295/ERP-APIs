@@ -83,8 +83,8 @@ export class AuthController {
     return await this.authService.generateResetLink(generateResetLinkDto)
   }
 
+  @Public()
   @Post('reset-password')
-  @ApiBearerAuth(SWAGGER_BEARER_AUTH)
   @ApiOperation({ summary: 'Reset the current user password' })
   public async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto
