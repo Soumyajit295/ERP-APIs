@@ -4,6 +4,7 @@ import { UsersRepository } from 'src/repositories/user.repository';
 import { PermissionRepository } from 'src/repositories/permission.repository';
 import { CreateUserDto } from 'src/common/dto/createUser.dto';
 import { UpdateUserDto } from 'src/common/dto/updateUser.dto';
+import { GetUsersQueryDto } from 'src/common/dto/user.dto';
 
 @Injectable()
 export class UsersService {
@@ -44,8 +45,8 @@ export class UsersService {
         return await this.usersRepository.createUser(createUserDto,tenantId)
     }
 
-    public async getTenantUsers(tenantId: string){
-        return await this.usersRepository.getTenantUsers(tenantId)
+    public async getTenantUsers(getUsersQueryDto: GetUsersQueryDto, tenantId: string){
+        return await this.usersRepository.getTenantUsers(getUsersQueryDto, tenantId)
     }
 
     public async updateUser(updateUserDto: UpdateUserDto,userId: string){

@@ -9,6 +9,7 @@ import { PoolClient } from "pg";
 import { Me } from "src/entities/me.entity";
 import { PermissionRepository } from "./permission.repository";
 import { UpdateUserDto } from "src/common/dto/updateUser.dto";
+import { GetUsersQueryDto, UserListResponseDto, UserResponse } from "src/common/dto/user.dto";
 
 @Injectable()
 export class UsersRepository{
@@ -229,28 +230,78 @@ export class UsersRepository{
         }
     }
 
-    async getTenantUsers(tenantId: string){
+    async getTenantUsers(
+        getUsersQueryDto: GetUsersQueryDto,
+        tenantId: string,
+    ): Promise<UserListResponseDto> {
         try {
-            const query = `
+            const { page = 1, limit = 10, search, roleId } = getUsersQueryDto;
+
+            const currentPage = Math.max(Number(page), 1);
+            const pageLimit = Math.min(Math.max(Number(limit), 1), 100);
+            const offset = (currentPage - 1) * pageLimit;
+            const searchParam = search?.trim() ?? null;
+            const roleIdParam = roleId?.trim() ?? null;
+
+            const countQuery = `
+                SELECT COUNT(*)::INT AS total
+                FROM users u
+                JOIN roles r on r.id = u.role_id
+                WHERE u.tenant_id = $1
+                    AND u.deleted_at IS NULL
+                    AND ($2::uuid IS NULL OR u.role_id = $2)
+                    AND ($3::text IS NULL OR u.fname ILIKE '%' || $3 || '%' OR u.lname ILIKE '%' || $3 || '%' OR u.email ILIKE '%' || $3 || '%')
+            `;
+
+            const userQuery = `
                 SELECT 
+                    u.id AS user_id,
                     u.fname,
                     u.lname,
                     u.email,
                     u.phone,
                     u.tenant_id,
-                    u.role_id as role_id,
+                    u.role_id,
                     r.name as role_name
                 FROM users u
                 JOIN roles r on r.id = u.role_id
-                WHERE u.tenant_id = $1 AND u.deleted_at IS NULL
+                WHERE u.tenant_id = $1
+                    AND u.deleted_at IS NULL
+                    AND ($2::uuid IS NULL OR u.role_id = $2)
+                    AND ($3::text IS NULL OR u.fname ILIKE '%' || $3 || '%' OR u.lname ILIKE '%' || $3 || '%' OR u.email ILIKE '%' || $3 || '%')
+                ORDER BY u.created_at DESC
+                LIMIT $4
+                OFFSET $5
             `;
-            const result = await this.databaseService.query(query,[tenantId])
-            if(result.rows.length === 0) return null;
 
-            return result.rows.map(row => this.mapRowToMeResponse(row))
+            const [countResult, userResult] = await Promise.all([
+                this.databaseService.query(countQuery, [tenantId, roleIdParam, searchParam]),
+                this.databaseService.query(userQuery, [tenantId, roleIdParam, searchParam, pageLimit, offset]),
+            ]);
+
+            const total = countResult?.rows[0]?.total ?? 0;
+            const totalPages = Math.ceil(total / pageLimit) ?? 0;
+
+            return {
+                records: userResult?.rows?.map((row: any) => this.mapRowToUserResponse(row)),
+                meta: { page: currentPage, limit: pageLimit, total, totalPages },
+            };
         } catch (error) {
             throw new InternalServerErrorException('Internal server error, failed to fetch tenant users')
         }
+    }
+
+    private mapRowToUserResponse(row: any): UserResponse {
+        return {
+            userId: row.user_id,
+            fname: row.fname,
+            lname: row.lname,
+            email: row.email,
+            phone: row.phone,
+            tenantId: row.tenant_id,
+            roleId: row.role_id,
+            roleName: row.role_name,
+        };
     }
 
     private mapRowToMeResponse(row: any): Me {
