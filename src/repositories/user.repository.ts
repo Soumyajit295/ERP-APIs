@@ -277,7 +277,8 @@ export class UsersRepository{
                     u.phone,
                     u.tenant_id,
                     u.role_id,
-                    r.name as role_name
+                    r.name as role_name,
+                    u.created_by
                 FROM users u
                 JOIN roles r on r.id = u.role_id
                 WHERE u.tenant_id = $1
@@ -316,6 +317,7 @@ export class UsersRepository{
             tenantId: row.tenant_id,
             roleId: row.role_id,
             roleName: row.role_name,
+            createdBy: row.created_by
         };
     }
 

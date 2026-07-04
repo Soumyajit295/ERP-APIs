@@ -53,6 +53,9 @@ export class UserResponse {
 
   @ApiProperty({ example: 'MANAGER' })
   roleName!: string;
+
+  @ApiProperty({ example: 'SYSTEM' })
+  createdBy?: string
 }
 
 export class UserResponseMeta {
