@@ -25,7 +25,7 @@ export class UsersController {
         @Body() createUserDto: CreateUserDto,
         @CurrentUser() user: CurrentUserPayload
     ){
-        return await this.userService.createUser(createUserDto,user.tenantId)
+        return await this.userService.createUser(createUserDto, user.tenantId, user.email)
     }
 
     @Get()

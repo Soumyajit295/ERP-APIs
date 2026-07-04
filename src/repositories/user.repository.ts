@@ -47,6 +47,7 @@ export class UsersRepository{
                     roleId: adminResult.rows[0].id,
                 },
                 tenant.id,
+                'SYSTEM',
                 client
             )
             await this.permissionRepository.giveAllModulePermissionToAdminForTenant(adminResult.rows[0].id,tenant.id,client)
@@ -54,11 +55,11 @@ export class UsersRepository{
         })
     }
 
-    async createUser(createUserDto: CreateUserDto,tenantId: string, client?: PoolClient){
+    async createUser(createUserDto: CreateUserDto, tenantId: string, createdBy: string, client?: PoolClient){
         try {
             const query = `
-                INSERT INTO users(fname,lname,email,password_hash,role_id,tenant_id,phone)
-                VALUES($1,$2,$3,$4,$5,$6,$7)
+                INSERT INTO users(fname,lname,email,password_hash,role_id,tenant_id,phone,created_by)
+                VALUES($1,$2,$3,$4,$5,$6,$7,$8)
                 RETURNING *
             `
             createUserDto.password = await bcrypt.hash(createUserDto.password,10)
@@ -70,7 +71,8 @@ export class UsersRepository{
                 createUserDto.password,
                 createUserDto.roleId,
                 tenantId,
-                createUserDto.phone
+                createUserDto.phone,
+                createdBy
             ]
     
             const result = client
@@ -215,6 +217,16 @@ export class UsersRepository{
 
     async deleteUser(userId: string){
         try {
+            const user = await this.findById(userId)
+
+            if(!user){
+                throw new BadRequestException('User not found')
+            }
+
+            if(user.createdBy === 'SYSTEM'){
+                throw new BadRequestException('System created user cannot be deleted')
+            }
+
             const deleteQuery = `
                 UPDATE users
                 SET deleted_at = NOW()
@@ -226,6 +238,9 @@ export class UsersRepository{
 
             return {message : 'User deleted successfully'}
         } catch (error) {
+            if(error instanceof BadRequestException){
+                throw error
+            }
             throw new InternalServerErrorException('Internal server error, while deleting user')
         }
     }
@@ -329,6 +344,7 @@ export class UsersRepository{
             tenantId: row.tenant_id,
             phone: row.phone,
             is_active: row.is_active,
+            createdBy: row.created_by,
             created_at: row.created_at,
             updated_at: row.updated_at,
             deleted_at: row.deleted_at

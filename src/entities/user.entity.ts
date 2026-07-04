@@ -8,6 +8,7 @@ export class User {
     roleId!: string;
     roleName?: string;
     is_active!: boolean;
+    createdBy?: string;
     created_at!: Date;
     updated_at!: Date;
     deleted_at!: Date | null;

@@ -41,8 +41,8 @@ export class UsersService {
         }
     }
 
-    public async createUser(createUserDto: CreateUserDto,tenantId: string){
-        return await this.usersRepository.createUser(createUserDto,tenantId)
+    public async createUser(createUserDto: CreateUserDto, tenantId: string, createdBy: string){
+        return await this.usersRepository.createUser(createUserDto, tenantId, createdBy)
     }
 
     public async getTenantUsers(getUsersQueryDto: GetUsersQueryDto, tenantId: string){
