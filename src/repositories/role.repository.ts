@@ -100,6 +100,27 @@ export class RolesRepository {
         }
     }
 
+    async getRoleOptions(tenantId: string){
+        try {
+            const query = `
+                SELECT 
+                    r.name AS label,
+                    r.id AS value
+                FROM roles r
+                WHERE r.deleted_at IS NULL
+                AND r.tenant_id = $1
+            `;
+
+            const result = await this.databaseService.query(query,[tenantId])
+
+            if(result.rows.length === 0) return []
+
+            return result.rows
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error while fetching role options')
+        }
+    }
+
     private mapRowToRoles(row: any){
         return{
             roleId: row.id,

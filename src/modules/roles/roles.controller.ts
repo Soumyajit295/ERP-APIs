@@ -1,9 +1,10 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { RolesService } from './roles.service';
 import { CurrentUser } from '../auth/currentuser.decorator';
 import type { CurrentUserPayload } from '../auth/types/current-user.type';
 import { CreateRolesDto } from 'src/common/dto/createRole.dto';
+import { RoleOptionDto } from 'src/common/dto/roleOption.dto';
 import { PERMISSION_CODES } from 'src/common/constants/permissions.constant';
 import { Permissions } from '../auth/permissions.decorator';
 import { SWAGGER_BEARER_AUTH } from 'src/swagger';
@@ -41,5 +42,12 @@ export class RolesController {
         @Param('id', ParseUUIDPipe) id: string
     ){
         return await this.rolesService.deleteRole(id)
+    }
+
+    @Get('options')
+    @ApiOperation({ summary: 'role options in the authenticated tenant' })
+    @ApiOkResponse({ type: [RoleOptionDto] })
+    public async roleOptions(@CurrentUser('tenantId') tenantId: string){
+        return await this.rolesService.getRoleOptions(tenantId)
     }
 }

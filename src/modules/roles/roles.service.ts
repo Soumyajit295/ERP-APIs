@@ -19,4 +19,8 @@ export class RolesService {
     public async deleteRole(roleId: string){
         return await this.rolesRepository.deleteRole(roleId)
     }
+
+    public async getRoleOptions(tenantId: string){
+        return await this.rolesRepository.getRoleOptions(tenantId)
+    }
 }
