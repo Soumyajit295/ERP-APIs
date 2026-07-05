@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Query } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { CreateRolesDto } from "src/common/dto/createRole.dto";
-import { GetPermissionQueryDto, PemissionsResponse, PermissionListResponseDto } from "src/common/dto/role-permissions.dto";
+import { GetPermissionQueryDto, PemissionsResponse } from "src/common/dto/role-permissions.dto";
 import { DatabaseService } from "src/database/database.service";
 
 @Injectable()
@@ -126,34 +126,12 @@ export class RolesRepository {
         getPermissionsQueryDto: GetPermissionQueryDto,
         tenantId: string,
         roleId: string
-    ): Promise<PermissionListResponseDto>{
+    ): Promise<PemissionsResponse[]>{
         try {
-            const {
-                page = 1,
-                limit = 10,
-                moduleId
-            } = getPermissionsQueryDto
-
-            const currentPage = Math.max(Number(page),1)
-            const pageLimit = Math.min(Math.max(Number(limit),1),100)
-            const offset = (currentPage - 1) * pageLimit
+            const { moduleId } = getPermissionsQueryDto
             const moduleIdParams = moduleId ?? null
 
-            const countQuery = `
-                SELECT COUNT(*)::INT AS total
-                FROM modules m
-                JOIN permissions p 
-                    ON p.module_id = m.module_id 
-                AND p.deleted_at IS NULL
-                JOIN role_permissions rp ON rp.per_id = p.permission_id AND rp.deleted_at IS NULL
-                    AND rp.tenant_id = $1
-                    AND rp.role_id = $2
-                WHERE ($3::uuid IS NULL OR m.module_id = $3)
-            `;
-
-            const countvalues = [tenantId,roleId,moduleIdParams]
-
-            const mainQuery = `
+            const query = `
                 SELECT 
                     m.module_id,
                     m.module_name,
@@ -166,33 +144,15 @@ export class RolesRepository {
                 JOIN role_permissions rp ON rp.per_id = p.permission_id AND rp.deleted_at IS NULL
                     AND rp.tenant_id = $1
                     AND rp.role_id = $2
-                WHERE ($5::uuid IS NULL OR m.module_id = $5)
+                WHERE ($3::uuid IS NULL OR m.module_id = $3)
                 ORDER BY m.module_name
-                LIMIT $3
-                OFFSET $4;
             `;
 
-            const mainValues = [tenantId,roleId,pageLimit,offset,moduleIdParams]
+            const values = [tenantId,roleId,moduleIdParams]
 
-            const [countResult,mainResult] = await Promise.all([
-                this.databaseService.query(countQuery,countvalues),
-                this.databaseService.query(mainQuery,mainValues)
-            ])
+            const result = await this.databaseService.query(query,values)
 
-            const total = countResult?.rows[0]?.total || 0
-            const totalPages = Math.ceil(total / pageLimit) || 0
-
-            const records = mainResult?.rows?.map((row: any) => this.mapRowPermissions(row)) ?? []
-
-            return {
-                records,
-                meta: {
-                    page: currentPage,
-                    limit: pageLimit,
-                    total,
-                    totalPages
-                }
-            }
+            return result?.rows?.map((row: any) => this.mapRowPermissions(row)) ?? []
         } catch (error) {
             throw new InternalServerErrorException('Internal server error, while fetching permissions')
         }
