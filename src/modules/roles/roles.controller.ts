@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { RolesService } from './roles.service';
 import { CurrentUser } from '../auth/currentuser.decorator';
@@ -8,6 +8,7 @@ import { RoleOptionDto } from 'src/common/dto/roleOption.dto';
 import { PERMISSION_CODES } from 'src/common/constants/permissions.constant';
 import { Permissions } from '../auth/permissions.decorator';
 import { SWAGGER_BEARER_AUTH } from 'src/swagger';
+import { GetPermissionQueryDto } from 'src/common/dto/role-permissions.dto';
 
 @ApiTags('Roles')
 @ApiBearerAuth(SWAGGER_BEARER_AUTH)
@@ -49,5 +50,15 @@ export class RolesController {
     @ApiOkResponse({ type: [RoleOptionDto] })
     public async roleOptions(@CurrentUser('tenantId') tenantId: string){
         return await this.rolesService.getRoleOptions(tenantId)
+    }
+
+    @Get('role-permissions/:roleId')
+    @ApiOperation({ summary: 'All permission of given role in authenticated tenant' })
+    public async getAllPermissionForRole(
+        @CurrentUser('tenantId') tenantId: string,
+        @Query() getPermissionsQueryDto: GetPermissionQueryDto,
+        @Param('roleId',ParseUUIDPipe) roleId: string
+    ){
+        return await this.rolesService.getAllPermissionsOfRole(getPermissionsQueryDto,tenantId,roleId)
     }
 }
