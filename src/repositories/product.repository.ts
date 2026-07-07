@@ -13,6 +13,7 @@ export interface ProductItem{
     sellingPrice: number;
     reorderLevel: number;
     categoryName: string;
+    categoryId: string;
     description?: string
 }
 @Injectable()
@@ -109,7 +110,8 @@ export class ProductRepository {
                     p.selling_price,
                     p.reorder_level,
                     p.status,
-                    c.category_name
+                    c.category_name,
+                    c.category_id
                 FROM products p
                 JOIN categories c 
                     ON c.category_id = p.category_id
@@ -186,6 +188,7 @@ export class ProductRepository {
                     p.selling_price,
                     p.reorder_level,
                     c.category_name,
+                    c.category_id,
                     p.description
                 FROM products p
                 JOIN categories c
@@ -329,6 +332,7 @@ export class ProductRepository {
             sellingPrice: Number(row.selling_price),
             reorderLevel: Number(row.reorder_level),
             categoryName: row.category_name,
+            categoryId: row.category_id,
             description: row.description
         }
     }
