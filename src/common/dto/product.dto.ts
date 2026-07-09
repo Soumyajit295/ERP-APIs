@@ -172,3 +172,64 @@ export class ProductOptionDto {
   @ApiProperty({ format: 'uuid' })
   value!: string;
 }
+
+export class InventoryRecord {
+  @ApiProperty({ example: 'Main Warehouse' })
+  warehouseName!: string
+
+  @ApiProperty({ example: 100 })
+  quantity!: number
+
+  @ApiProperty({ example: 10 })
+  reservedQuantity!: number
+
+  @ApiProperty({ example: 90 })
+  availableQuantity!: number
+}
+
+export class ProductDetailsDto {
+  @ApiProperty({ format: 'uuid' })
+  productId!: string
+
+  @ApiProperty({ example: 'Wireless Keyboard' })
+  productName!: string
+
+  @ApiProperty({ format: 'uuid' })
+  categoryId!: string
+
+  @ApiProperty({ example: 'Electronics' })
+  categoryName!: string
+
+  @ApiProperty({ example: 'KB-WL-001' })
+  sku!: string
+
+  @ApiPropertyOptional({ example: '8901234567890' })
+  barcode!: string
+
+  @ApiProperty({ example: 1499 })
+  sellingPrice!: number
+
+  @ApiProperty({ example: 1200 })
+  costPrice!: number
+
+  @ApiProperty({ example: 299 })
+  profitPerUnit!: number
+
+  @ApiProperty({ example: 24.92 })
+  profitMargin!: number
+
+  @ApiProperty({ enum: ProductStatus, example: ProductStatus.ACTIVE })
+  status!: ProductStatus
+
+  @ApiPropertyOptional({ example: 'Compact Bluetooth keyboard for office use' })
+  description?: string
+
+  @ApiPropertyOptional({ example: '2024-01-01T00:00:00.000Z' })
+  createdAt?: string
+
+  @ApiPropertyOptional({ example: '2024-06-15T00:00:00.000Z' })
+  updatedAt?: string
+
+  @ApiPropertyOptional({ type: [InventoryRecord] })
+  inventoryDetails?: InventoryRecord[]
+}
