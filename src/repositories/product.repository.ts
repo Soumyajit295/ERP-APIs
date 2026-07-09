@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
-import { CreateProductDto, GetProductQueryDto, ProductOptionDto, UpdateProductDto } from "src/common/dto/product.dto";
+import { CreateProductDto, GetProductQueryDto, InventoryRecord, ProductDetailsDto, ProductOptionDto, UpdateProductDto } from "src/common/dto/product.dto";
 import { PaginatedResponseDto } from "src/common/dto/paginationResponse.dto";
 import { DatabaseService } from "src/database/database.service";
 
@@ -177,34 +177,65 @@ export class ProductRepository {
 
     async getProductById(productId: string,tenantId: string){
         try {
+            const inventoryQuery = `
+                SELECT 
+                    w.warehouse_name,
+                    i.quantity,
+                    i.reserved_quantity,
+                    (i.quantity + i.reserved_quantity) as availableQuantity
+                FROM inventory i
+                JOIN warehouses w ON w.warehouse_id = i.warehouse_id
+                WHERE i.tenant_id = $1
+                AND i.product_id = $2
+            `;
+
+            const inventoryValues = [tenantId,productId]
+
             const productQuery = `
-                SELECT
+                SELECT 
                     p.product_id,
                     p.product_name,
+                    c.category_id,
+                    c.category_name,
                     p.sku,
                     p.barcode,
-                    p.status,
                     p.purchase_price,
                     p.selling_price,
-                    p.reorder_level,
-                    c.category_name,
-                    c.category_id,
-                    p.description
+                    p.description,
+                    p.created_at,
+                    p.updated_at,
+                    p.status,
+                    (p.selling_price - p.purchase_price) As profit_per_unit,
+                    ROUND(
+                        ((p.selling_price - p.purchase_price) / p.selling_price) * 100,
+                        2
+                    ) AS profit_margin
                 FROM products p
-                JOIN categories c
-                    ON c.category_id = p.category_id
-                    AND c.deleted_at IS NULL
-                WHERE p.product_id = $1
-                AND p.tenant_id = $2
+                JOIN categories c ON c.category_id = p.category_id
+                WHERE p.tenant_id = $1
+                AND p.product_id = $2
                 AND p.deleted_at IS NULL
             `;
 
-            const result = await this.databaseService.query(productQuery,[productId,tenantId])
+            const productValues = [tenantId,productId]
 
-            if(result.rows.length === 0) return null;
+            const [inventoryResult,productResult] = await Promise.all([
+                this.databaseService.query(inventoryQuery,inventoryValues),
+                this.databaseService.query(productQuery,productValues)
+            ])
 
-            return this.mapRowToProduct(result.rows[0])
+            const inventoryData = inventoryResult?.rows?.map((row: any) => this.mapRowToInventoryRecord(row)) ?? []
+            
+            if(!productResult?.rows?.length){
+                throw new BadRequestException('Failed to get product details')
+            }
+
+            return this.mapRowToProductDetails(productResult?.rows[0],inventoryData)
+
         } catch (error) {
+            if(error instanceof BadRequestException){
+                throw error
+            }
             throw new InternalServerErrorException('Internal server error, while fetching product')
         }
     }
@@ -341,6 +372,35 @@ export class ProductRepository {
         return {
             label: row.category_name,
             value: row.category_id
+        }
+    }
+
+    private mapRowToInventoryRecord(row: any): InventoryRecord {
+        return {
+            warehouseName: row.warehouse_name,
+            quantity: row.quantity,
+            reservedQuantity: row.reserved_quantity,
+            availableQuantity: row.availableQuantity
+        }
+    }
+
+    private mapRowToProductDetails(row: any,inventoryData: InventoryRecord[]): ProductDetailsDto {
+        return {
+            productId: row.product_id,
+            productName: row.product_name,
+            categoryId: row.category_id,
+            categoryName: row.category_name,
+            sku: row.sku,
+            barcode: row.barcode,
+            costPrice: row.purchase_price,
+            sellingPrice: row.selling_price,
+            description: row.description,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+            status: row.status,
+            profitPerUnit: row.profit_per_unit,
+            profitMargin: row.profit_margin,
+            inventoryDetails: inventoryData
         }
     }
 }
