@@ -26,14 +26,15 @@ import { SalesOrdersModule } from './modules/sales-orders/sales-orders.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { FinanceModule } from './modules/finance/finance.module';
-
+import { PdfModule } from './modules/pdf/pdf.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env'
+      envFilePath: '.env',
     }),
+    PdfModule,
     TenantsModule,
     UsersModule,
     AuthModule,
@@ -51,9 +52,16 @@ import { FinanceModule } from './modules/finance/finance.module';
     SalesOrdersModule,
     InvoiceModule,
     PaymentsModule,
-    FinanceModule
+    FinanceModule,
   ],
   controllers: [AppController],
-  providers: [AppService, DatabaseService, UsersRepository,TenantRepository,PermissionRepository,RefreshTokensRepository],
+  providers: [
+    AppService,
+    DatabaseService,
+    UsersRepository,
+    TenantRepository,
+    PermissionRepository,
+    RefreshTokensRepository,
+  ],
 })
 export class AppModule {}

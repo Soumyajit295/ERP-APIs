@@ -7,6 +7,6 @@ import { DatabaseService } from 'src/database/database.service';
 @Module({
   controllers: [PurchaseOrdersController],
   providers: [PurchaseOrdersService, PurchaseOrderRepository, DatabaseService],
-  exports: [PurchaseOrdersService, PurchaseOrderRepository]
+  exports: [PurchaseOrdersService, PurchaseOrderRepository],
 })
 export class PurchaseOrdersModule {}

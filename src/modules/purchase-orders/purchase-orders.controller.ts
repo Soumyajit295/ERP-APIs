@@ -8,7 +8,9 @@ import {
   Patch,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -142,5 +144,30 @@ export class PurchaseOrdersController {
       purchaseOrderId,
       user.tenantId,
     );
+  }
+
+  @Get(':purchaseOrderId/download-pdf')
+  @Permissions(PERMISSION_CODES.PURCHASES_READ)
+  @ApiParam({ name: 'purchaseOrderId', format: 'uuid' })
+  @ApiOperation({ summary: 'Download purchase order as PDF' })
+  public async downloadPurchaseOrderPDF(
+    @Param('purchaseOrderId', ParseUUIDPipe) purchaseOrderId: string,
+    @CurrentUser() user: CurrentUserPayload,
+    @Res() res: Response,
+  ) {
+    const { buffer, fileName } = await this.purchaseOrdersService.downloadPdf(
+      purchaseOrderId,
+      user.tenantId,
+    );
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+      Expires: '0',
+    });
+
+    res.end(buffer);
   }
 }

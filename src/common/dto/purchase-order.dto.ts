@@ -14,7 +14,10 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { PaymentStatus, PurchaseOrderStatus } from '../enums/purchase-order.enum';
+import {
+  PaymentStatus,
+  PurchaseOrderStatus,
+} from '../enums/purchase-order.enum';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
