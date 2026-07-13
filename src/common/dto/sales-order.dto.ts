@@ -225,6 +225,32 @@ export class SalesOrderItemsResponseDto {
   totalPrice!: number
 }
 
+export class SalesOrderDetailsResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  salesOrderId!: string
+
+  @ApiProperty({ example: 'SO-2026-1780829766072' })
+  salesOrderNumber!: string
+
+  @ApiProperty({ example: '2026-06-16' })
+  orderDate!: string
+
+  @ApiProperty({ example: 15000.00 })
+  totalAmount!: number
+
+  @ApiProperty({ example: 'DRAFT' })
+  orderStatus!: string
+
+  @ApiProperty({ type: CustomerInformationDto })
+  customerInfo!: CustomerInformationDto
+
+  @ApiProperty({ type: WarehouseInformationDto })
+  warehouseInfo!: WarehouseInformationDto
+
+  @ApiProperty({ type: [SalesOrderItemsDto] })
+  items!: SalesOrderItemsDto[]
+}
+
 export class SalesOrderOptionDto {
   @ApiProperty({ example: 'SO-2026-1780829766072' })
   label!: string;

@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -12,8 +13,7 @@ import { SalesOrdersService } from './sales-orders.service';
 import {
   CreateSalesOrderDto,
   GetSalesOrderQueryDto,
-  SalesOrderDashboardResponseDto,
-  SalesOrderItemsResponseDto,
+  SalesOrderDetailsResponseDto,
   SalesOrderMessageResponseDto,
   SalesOrderOptionDto,
   SalesOrderPaginatedResponseDto,
@@ -72,29 +72,17 @@ export class SalesOrdersController {
         return await this.salesOrderService.getSalesOrders(getSalesOrderQueryDto, tenantId)
     }
 
-    @Get('dashboard/:salesOrderId')
+    @Get('details/:salesOrderId')
     @Permissions(PERMISSION_CODES.SALES_READ)
-    @ApiOperation({ summary: 'Get sales order dashboard details' })
+    @ApiOperation({ summary: 'Get sales order details' })
     @ApiParam({ name: 'salesOrderId', format: 'uuid' })
-    @ApiOkResponse({ type: SalesOrderDashboardResponseDto })
-    public async getSalesOrderDashboard(
+    @ApiOkResponse({ type: SalesOrderDetailsResponseDto })
+    public async getSalesOrderDetails(
         @Param('salesOrderId', ParseUUIDPipe) salesOrderId: string,
         @CurrentUser('tenantId') tenantId: string
     ){
-        return await this.salesOrderService.getSalesOrderDashboard(salesOrderId, tenantId)
+        return await this.salesOrderService.getSalesOrderDetails(salesOrderId, tenantId)
     }
-
-  @Get('items/:salesOrderId')
-  @Permissions(PERMISSION_CODES.SALES_READ)
-  @ApiOperation({ summary: 'Get sales order items' })
-  @ApiParam({ name: 'salesOrderId', format: 'uuid' })
-  @ApiOkResponse({ type: SalesOrderItemsResponseDto })
-  public async getSalesOrderItems(
-    @Param('salesOrderId', ParseUUIDPipe) salesOrderId: string,
-    @CurrentUser('tenantId') tenantId: string
-  ){
-    return await this.salesOrderService.getSalesOrderItems(salesOrderId, tenantId)
-  }
 
   @Get('options')
   @Permissions(PERMISSION_CODES.SALES_READ)
@@ -102,5 +90,27 @@ export class SalesOrdersController {
   @ApiOkResponse({ type: [SalesOrderOptionDto] })
   public async salesOrderOptions(@CurrentUser('tenantId') tenantId: string) {
     return await this.salesOrderService.salesOrderOptions(tenantId)
+  }
+
+  @Get(':salesOrderId/download-pdf')
+  @Permissions(PERMISSION_CODES.SALES_READ)
+  @ApiParam({ name: 'salesOrderId', format: 'uuid' })
+  @ApiOperation({ summary: 'Download sales order as PDF' })
+  public async downloadSalesOrderPdf(
+    @Param('salesOrderId', ParseUUIDPipe) salesOrderId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @Res() res: Response,
+  ) {
+    const { buffer, fileName } = await this.salesOrderService.downloadPdf(salesOrderId, tenantId)
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+      Expires: '0',
+    })
+
+    res.end(buffer)
   }
 }
