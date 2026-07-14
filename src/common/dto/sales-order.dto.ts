@@ -107,6 +107,14 @@ export class GetSalesOrderQueryDto {
   search?: string;
 }
 
+export class GetSalesOrderOptionsQueryDto {
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  customerId?: string;
+}
+
+
 export class SalesOrderListResponseDto {
   @ApiProperty({ format: 'uuid' })
   salesOrderId!: string;

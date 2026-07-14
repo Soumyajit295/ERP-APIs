@@ -1,5 +1,5 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
-import { CreateSalesOrderDto, GetSalesOrderQueryDto, UpdateSalesOrderStatusDto } from 'src/common/dto/sales-order.dto';
+import { CreateSalesOrderDto, GetSalesOrderOptionsQueryDto, GetSalesOrderQueryDto, UpdateSalesOrderStatusDto } from 'src/common/dto/sales-order.dto';
 import { SalesOrdresRepository } from 'src/repositories/salesOrder.repository';
 import { PdfService } from '../pdf/pdf.service';
 import { buildSalesOrderHtml } from './templates/sales-order.template';
@@ -36,8 +36,8 @@ export class SalesOrdersService {
         }
     }
 
-    public async salesOrderOptions(tenantId: string){
-        return await this.salesOrderRepository.salesOrderOptions(tenantId)
+    public async salesOrderOptions(getSalesOrderQueryDto: GetSalesOrderOptionsQueryDto,tenantId: string){
+        return await this.salesOrderRepository.salesOrderOptions(getSalesOrderQueryDto,tenantId)
     }
 
     public async downloadPdf(salesOrderId: string, tenantId: string){

@@ -257,3 +257,35 @@ export class InvoiceBySalesOrderResponseDto {
   @ApiProperty({ example: InvoiceStatus.PAID })
   status!: string;
 }
+
+export class InvoiceDetailsResponseDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  invoiceId!: string;
+
+  @ApiProperty({ example: 'INV-2025-001' })
+  invoiceNumber!: string;
+
+  @ApiProperty({ example: '2025-06-01' })
+  issueDate!: Date;
+
+  @ApiProperty({ example: '2025-06-30' })
+  dueDate!: Date;
+
+  @ApiProperty({ example: 10000 })
+  totalAmount!: number;
+
+  @ApiProperty({ example: 4000 })
+  paidAmount!: number;
+
+  @ApiProperty({ example: 6000 })
+  balanceAmount!: number;
+
+  @ApiProperty({ example: InvoiceStatus.PARTIALLY_PAID })
+  status!: InvoiceStatus;
+
+  @ApiProperty({ type: CustomerInformationDto })
+  customerInformation!: CustomerInformationDto;
+
+  @ApiProperty({ type: [InvoiceItems] })
+  items!: InvoiceItems[];
+}

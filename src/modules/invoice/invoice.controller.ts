@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -15,8 +16,7 @@ import {
   createInvoiceDto,
   GetInvoiceQueryDto,
   InvoiceBySalesOrderResponseDto,
-  InvoiceDashboardDto,
-  InvoiceItemsDto,
+  InvoiceDetailsResponseDto,
   InvoiceMessageResponseDto,
   InvoicePaginatedResponseDto,
   updateInvoiceDto,
@@ -71,28 +71,16 @@ export class InvoiceController {
     return await this.invoiceService.updateInvoiceDto(updateInvoiceDto, invoiceId, tenantId);
   }
 
-  @Get('dashboard/:invoiceId')
+  @Get('details/:invoiceId')
   @Permissions(PERMISSION_CODES.FINANCE_READ)
-  @ApiOperation({ summary: 'Get invoice dashboard details' })
+  @ApiOperation({ summary: 'Get invoice details' })
   @ApiParam({ name: 'invoiceId', format: 'uuid' })
-  @ApiOkResponse({ type: InvoiceDashboardDto })
-  public async getInvoiceDashboard(
+  @ApiOkResponse({ type: InvoiceDetailsResponseDto })
+  public async getInvoiceDetails(
     @Param('invoiceId', ParseUUIDPipe) invoiceId: string,
     @CurrentUser('tenantId') tenantId: string,
   ) {
-    return await this.invoiceService.getInvoiceDashboardDetails(invoiceId, tenantId);
-  }
-
-  @Get('items/:invoiceId')
-  @Permissions(PERMISSION_CODES.FINANCE_READ)
-  @ApiOperation({ summary: 'Get invoice line items' })
-  @ApiParam({ name: 'invoiceId', format: 'uuid' })
-  @ApiOkResponse({ type: InvoiceItemsDto })
-  public async getInvoiceItems(
-    @Param('invoiceId', ParseUUIDPipe) invoiceId: string,
-    @CurrentUser('tenantId') tenantId: string,
-  ) {
-    return await this.invoiceService.getInvoiceItemsDetails(invoiceId, tenantId);
+    return await this.invoiceService.getInvoiceDetails(invoiceId, tenantId);
   }
 
   @Get('sales-order/:salesOrderId')
@@ -105,5 +93,27 @@ export class InvoiceController {
     @CurrentUser('tenantId') tenantId: string,
   ) {
     return await this.invoiceService.getInvoiceBySalesOrderId(salesOrderId, tenantId);
+  }
+
+  @Get(':invoiceId/download-pdf')
+  @Permissions(PERMISSION_CODES.FINANCE_READ)
+  @ApiParam({ name: 'invoiceId', format: 'uuid' })
+  @ApiOperation({ summary: 'Download invoice as PDF' })
+  public async downloadInvoicePdf(
+    @Param('invoiceId', ParseUUIDPipe) invoiceId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @Res() res: Response,
+  ) {
+    const { buffer, fileName } = await this.invoiceService.downloadPdf(invoiceId, tenantId)
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+      Expires: '0',
+    })
+
+    res.end(buffer)
   }
 }

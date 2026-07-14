@@ -12,6 +12,7 @@ import {
 import { SalesOrdersService } from './sales-orders.service';
 import {
   CreateSalesOrderDto,
+  GetSalesOrderOptionsQueryDto,
   GetSalesOrderQueryDto,
   SalesOrderDetailsResponseDto,
   SalesOrderMessageResponseDto,
@@ -87,9 +88,10 @@ export class SalesOrdersController {
   @Get('options')
   @Permissions(PERMISSION_CODES.SALES_READ)
   @ApiOperation({ summary: 'List sales order options in the authenticated tenant' })
+  @ApiQuery({ name: 'customerId', required: false, type: String, format: 'uuid' })
   @ApiOkResponse({ type: [SalesOrderOptionDto] })
-  public async salesOrderOptions(@CurrentUser('tenantId') tenantId: string) {
-    return await this.salesOrderService.salesOrderOptions(tenantId)
+  public async salesOrderOptions(@Query() getSalesOrderQueryDto: GetSalesOrderOptionsQueryDto,@CurrentUser('tenantId') tenantId: string) {
+    return await this.salesOrderService.salesOrderOptions(getSalesOrderQueryDto,tenantId)
   }
 
   @Get(':salesOrderId/download-pdf')
