@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
-import { CreateSalesOrderDto, GetSalesOrderQueryDto, SalesOrderDashboardResponseDto, SalesOrderItemsDto, SalesOrderItemsResponseDto, SalesOrderListResponseDto, SalesOrderPaginatedResponseDto, UpdateSalesOrderStatusDto } from "src/common/dto/sales-order.dto";
+import { CreateSalesOrderDto, GetSalesOrderOptionsQueryDto, GetSalesOrderQueryDto, SalesOrderDashboardResponseDto, SalesOrderItemsDto, SalesOrderItemsResponseDto, SalesOrderListResponseDto, SalesOrderPaginatedResponseDto, UpdateSalesOrderStatusDto } from "src/common/dto/sales-order.dto";
 import { DatabaseService } from "src/database/database.service";
 import { CustomerRepository } from "./customer.repository";
 import { SalesOrderStatus } from "src/common/enums/sales-order.enum";
@@ -699,7 +699,7 @@ export class SalesOrdresRepository {
         }
     }
 
-    async salesOrderOptions(tenantId: string){
+    async salesOrderOptions(getSalesOrderQueryDto: GetSalesOrderOptionsQueryDto,tenantId: string){
         try {
             const query = `
                 SELECT 
@@ -708,9 +708,13 @@ export class SalesOrdresRepository {
                 FROM sales_orders so
                 WHERE so.tenant_id = $1
                 AND so.deleted_at IS NULL
+                AND (
+                    $2::uuid IS NULL
+                    OR so.customer_id = $2
+                )
             `;
 
-            const result = await this.databaseService.query(query,[tenantId])
+            const result = await this.databaseService.query(query,[tenantId,getSalesOrderQueryDto?.customerId])
 
             if(result?.rows?.length === 0) return []
 
