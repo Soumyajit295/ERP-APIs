@@ -165,13 +165,17 @@ export class InvoiceRepository {
                     i.invoice_number,
                     c.customer_name,
                     c.email,
+                    c.customer_id,
                     i.issue_date,
                     i.due_date,
                     i.total_amount,
                     i.paid_amount,
-                    i.status
+                    i.status,
+                    i.notes,
+                    so.so_id
                 FROM invoices i
                 JOIN customers c ON c.customer_id = i.customer_id AND c.deleted_at IS NULL
+                JOIN sales_orders so ON so.so_id = i.sales_order_id
                 WHERE i.tenant_id = $1
                 AND i.deleted_at IS NULL
                 AND(
@@ -445,11 +449,14 @@ export class InvoiceRepository {
             invoiceNumber: row.invoice_number,
             customername: row.customer_name,
             customerEmail: row.email,
+            customerId: row.customer_id,
             issueDate: row.issue_date,
             dueDate: row.due_date,
             totalAmount: Number(row.total_amount),
             paidAmount: Number(row.paid_amount),
-            status: row.status
+            status: row.status,
+            notes: row.notes,
+            salesOrderId: row.so_id
         }
     }
 

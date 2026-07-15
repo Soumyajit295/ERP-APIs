@@ -107,8 +107,17 @@ export class InvoiceListResponseDto {
     @ApiProperty({ example: 'Acme Corp' })
     customername!: string
 
+    @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+    customerId!: string
+
     @ApiProperty({ example: 'billing@acme.com' })
     customerEmail!: string
+
+    @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+    salesOrderId!: string
+    
+    @ApiProperty({ example: 'Invoice notes' })
+    notes?: string
 
     @ApiProperty({ example: '2025-06-01' })
     issueDate!: string
