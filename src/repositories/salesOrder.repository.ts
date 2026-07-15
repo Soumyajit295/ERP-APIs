@@ -710,11 +710,11 @@ export class SalesOrdresRepository {
                 AND so.deleted_at IS NULL
                 AND (
                     $2::uuid IS NULL
-                    OR so.customer_id = $2
+                    OR so.customer_id = $2 AND so.status = $3
                 )
             `;
 
-            const result = await this.databaseService.query(query,[tenantId,getSalesOrderQueryDto?.customerId])
+            const result = await this.databaseService.query(query,[tenantId,getSalesOrderQueryDto?.customerId,SalesOrderStatus.COMPLETED])
 
             if(result?.rows?.length === 0) return []
 
