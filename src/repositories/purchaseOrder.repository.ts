@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PaginatedResponseDto } from 'src/common/dto/paginationResponse.dto';
 import {
+  GetPurchaseOrderOptionsQueryDto,
   CreatePurchaseOrderDto,
   GetPurchaseOrderQueryDto,
   ProductItem,
@@ -532,6 +533,39 @@ export class PurchaseOrderRepository {
         throw error
       }
       throw new InternalServerErrorException('Internal server error while updaing the putrchase order payment status')
+    }
+  }
+
+  async purchaseOrderOptions(getPurchaseOrderOptionsQueryDto: GetPurchaseOrderOptionsQueryDto,tenantId: string){
+    try {
+      const statusParam = getPurchaseOrderOptionsQueryDto?.status?.length
+        ? getPurchaseOrderOptionsQueryDto.status.join(',')
+        : null;
+
+      const query = `
+        SELECT 
+          po.po_number AS label,
+          po.po_id AS value
+        FROM purchase_orders po
+        WHERE po.tenant_id = $1
+        AND po.deleted_at IS NULL
+        AND (
+          $2::uuid IS NULL
+          OR po.supplier_id = $2
+        )
+        AND (
+          $3::text IS NULL
+          OR po.status::text = ANY(string_to_array($3, ','))
+        )
+      `;
+
+      const result = await this.databaseService.query(query,[tenantId,getPurchaseOrderOptionsQueryDto?.supplierId,statusParam])
+
+      if(result?.rows?.length === 0) return []
+
+      return result?.rows
+    } catch (error) {
+      throw new InternalServerErrorException('Internal server error while fetching purchase order options')
     }
   }
 

@@ -701,6 +701,10 @@ export class SalesOrdresRepository {
 
     async salesOrderOptions(getSalesOrderQueryDto: GetSalesOrderOptionsQueryDto,tenantId: string){
         try {
+            const statusParam = getSalesOrderQueryDto?.status?.length
+                ? getSalesOrderQueryDto.status.join(',')
+                : null;
+
             const query = `
                 SELECT 
                     so.so_number AS label,
@@ -712,9 +716,13 @@ export class SalesOrdresRepository {
                     $2::uuid IS NULL
                     OR so.customer_id = $2 AND so.status = $3
                 )
+                AND (
+                    $4::text IS NULL
+                    OR so.status::text = ANY(string_to_array($4, ','))
+                )
             `;
 
-            const result = await this.databaseService.query(query,[tenantId,getSalesOrderQueryDto?.customerId,SalesOrderStatus.COMPLETED])
+            const result = await this.databaseService.query(query,[tenantId,getSalesOrderQueryDto?.customerId,SalesOrderStatus.COMPLETED,statusParam])
 
             if(result?.rows?.length === 0) return []
 

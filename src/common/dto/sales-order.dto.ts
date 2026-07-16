@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsUUID,
   IsInt,
@@ -112,6 +112,17 @@ export class GetSalesOrderOptionsQueryDto {
   @IsOptional()
   @IsUUID()
   customerId?: string;
+
+  @ApiPropertyOptional({
+    enum: SalesOrderStatus,
+    isArray: true,
+    example: [SalesOrderStatus.COMPLETED, SalesOrderStatus.CONFIRMED],
+  })
+  @IsOptional()
+  @Transform(({ value }) => (Array.isArray(value) ? value : value ? [value] : undefined))
+  @IsArray()
+  @IsEnum(SalesOrderStatus, { each: true })
+  status?: SalesOrderStatus[];
 }
 
 

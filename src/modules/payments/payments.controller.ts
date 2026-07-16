@@ -7,7 +7,8 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { PaymentsService } from './payments.service';
 import {
   CreatePaymentDto,
@@ -78,5 +79,27 @@ export class PaymentsController {
     @CurrentUser('tenantId') tenantId: string,
   ) {
     return await this.paymentService.getPaymentDashboardData(paymentId, tenantId);
+  }
+
+  @Get(':paymentId/download-recipt')
+  @Permissions(PERMISSION_CODES.FINANCE_READ)
+  @ApiParam({ name: 'paymentId', format: 'uuid' })
+  @ApiOperation({ summary: 'Download payment receipt as PDF' })
+  public async downloadPaymentRecipt(
+    @Param('paymentId', ParseUUIDPipe) paymentId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @Res() res: Response,
+  ) {
+    const { buffer, fileName } = await this.paymentService.downloadRecipt(paymentId, tenantId)
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+      Expires: '0',
+    })
+
+    res.end(buffer)
   }
 }

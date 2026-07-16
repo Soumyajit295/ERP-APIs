@@ -23,9 +23,11 @@ import {
 import { PurchaseOrdersService } from './purchase-orders.service';
 import {
   CreatePurchaseOrderDto,
+  GetPurchaseOrderOptionsQueryDto,
   GetPurchaseOrderQueryDto,
   PurchaseOrderDeatilsResponseDto,
   PurchaseOrderMessageResponseDto,
+  PurchaseOrderOptionDto,
   PurchaseOrderPaginatedResponseDto,
   PurchaseOrderStatusUpdateResponseDto,
   UpdatePurchaseOrderStatusDto,
@@ -97,6 +99,19 @@ export class PurchaseOrdersController {
       getPurchaseOrderQueryDto,
       user.tenantId,
     );
+  }
+
+  @Get('options')
+  @Permissions(PERMISSION_CODES.PURCHASES_READ)
+  @ApiOperation({ summary: 'List purchase order options in the authenticated tenant' })
+  @ApiQuery({ name: 'supplierId', required: false, type: String, format: 'uuid' })
+  @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'PENDING', 'APPROVED', 'RECEIVED', 'CANCELLED'], isArray: true })
+  @ApiOkResponse({ type: [PurchaseOrderOptionDto] })
+  public async purchaseOrderOptions(
+    @Query() getPurchaseOrderOptionsQueryDto: GetPurchaseOrderOptionsQueryDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return await this.purchaseOrdersService.purchaseOrderOptions(getPurchaseOrderOptionsQueryDto, user.tenantId);
   }
 
   @Get(':purchaseOrderId')

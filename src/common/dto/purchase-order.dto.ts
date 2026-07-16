@@ -18,7 +18,7 @@ import {
   PaymentStatus,
   PurchaseOrderStatus,
 } from '../enums/purchase-order.enum';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PurchaseOrderItemDto {
@@ -293,4 +293,30 @@ export class PurchaseOrderStatusUpdateDataDto {
 export class PurchaseOrderStatusUpdateResponseDto extends PurchaseOrderMessageResponseDto {
   @ApiProperty({ type: PurchaseOrderStatusUpdateDataDto })
   purchaseOrder!: PurchaseOrderStatusUpdateDataDto;
+}
+
+export class GetPurchaseOrderOptionsQueryDto {
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  supplierId?: string;
+
+  @ApiPropertyOptional({
+    enum: PurchaseOrderStatus,
+    isArray: true,
+    example: [PurchaseOrderStatus.APPROVED, PurchaseOrderStatus.RECEIVED],
+  })
+  @IsOptional()
+  @Transform(({ value }) => (Array.isArray(value) ? value : value ? [value] : undefined))
+  @IsArray()
+  @IsEnum(PurchaseOrderStatus, { each: true })
+  status?: PurchaseOrderStatus[];
+}
+
+export class PurchaseOrderOptionDto {
+  @ApiProperty({ example: 'PO-2026-1780829766072' })
+  label!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  value!: string;
 }
