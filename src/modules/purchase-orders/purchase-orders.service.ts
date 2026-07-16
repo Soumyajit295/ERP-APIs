@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import {
   CreatePurchaseOrderDto,
+  GetPurchaseOrderOptionsQueryDto,
   GetPurchaseOrderQueryDto,
   UpdatePurchaseOrderStatusDto,
 } from 'src/common/dto/purchase-order.dto';
@@ -75,6 +76,10 @@ export class PurchaseOrdersService {
       purchaseorderId,
       tenantId,
     );
+  }
+
+  public async purchaseOrderOptions(getPurchaseOrderOptionsQueryDto: GetPurchaseOrderOptionsQueryDto, tenantId: string) {
+    return await this.purchaseOrderRepository.purchaseOrderOptions(getPurchaseOrderOptionsQueryDto, tenantId);
   }
 
   public async downloadPdf(purchaseOrderId: string, tenantId: string) {

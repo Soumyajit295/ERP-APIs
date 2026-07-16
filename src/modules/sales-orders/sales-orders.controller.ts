@@ -89,8 +89,10 @@ export class SalesOrdersController {
   @Permissions(PERMISSION_CODES.SALES_READ)
   @ApiOperation({ summary: 'List sales order options in the authenticated tenant' })
   @ApiQuery({ name: 'customerId', required: false, type: String, format: 'uuid' })
+  @ApiQuery({ name: 'status', required: false, enum: ['DRAFT', 'CONFIRMED', 'COMPLETED', 'CANCELLED'], isArray: true })
   @ApiOkResponse({ type: [SalesOrderOptionDto] })
   public async salesOrderOptions(@Query() getSalesOrderQueryDto: GetSalesOrderOptionsQueryDto,@CurrentUser('tenantId') tenantId: string) {
+    console.log("Query : ",getSalesOrderQueryDto)
     return await this.salesOrderService.salesOrderOptions(getSalesOrderQueryDto,tenantId)
   }
 
