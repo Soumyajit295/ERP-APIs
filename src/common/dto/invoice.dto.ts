@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger"
-import { Type } from "class-transformer"
-import { IsDateString, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min, MinLength } from "class-validator"
+import { Transform, Type } from "class-transformer"
+import { IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min, MinLength } from "class-validator"
 import { InvoiceStatus } from "../enums/invoice.enum"
 
 export class createInvoiceDto {
@@ -265,6 +265,27 @@ export class InvoiceBySalesOrderResponseDto {
 
   @ApiProperty({ example: InvoiceStatus.PAID })
   status!: string;
+}
+
+export class GetInvoiceOptionsQueryDto {
+  @ApiPropertyOptional({
+    enum: InvoiceStatus,
+    isArray: true,
+    example: [InvoiceStatus.UNPAID, InvoiceStatus.PAID],
+  })
+  @IsOptional()
+  @Transform(({ value }) => (Array.isArray(value) ? value : value ? [value] : undefined))
+  @IsArray()
+  @IsEnum(InvoiceStatus, { each: true })
+  status?: InvoiceStatus[];
+}
+
+export class InvoiceOptionDto {
+  @ApiProperty({ example: 'INV-2025-1712345678901' })
+  label!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  value!: string;
 }
 
 export class InvoiceDetailsResponseDto {

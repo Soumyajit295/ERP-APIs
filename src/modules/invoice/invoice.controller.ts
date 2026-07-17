@@ -15,9 +15,11 @@ import { PERMISSION_CODES } from 'src/common/constants/permissions.constant';
 import {
   createInvoiceDto,
   GetInvoiceQueryDto,
+  GetInvoiceOptionsQueryDto,
   InvoiceBySalesOrderResponseDto,
   InvoiceDetailsResponseDto,
   InvoiceMessageResponseDto,
+  InvoiceOptionDto,
   InvoicePaginatedResponseDto,
   updateInvoiceDto,
 } from 'src/common/dto/invoice.dto';
@@ -93,6 +95,15 @@ export class InvoiceController {
     @CurrentUser('tenantId') tenantId: string,
   ) {
     return await this.invoiceService.getInvoiceBySalesOrderId(salesOrderId, tenantId);
+  }
+
+  @Get('options')
+  @Permissions(PERMISSION_CODES.FINANCE_READ)
+  @ApiOperation({ summary: 'List invoice options in the authenticated tenant' })
+  @ApiQuery({ name: 'status', required: false, enum: ['UNPAID', 'PARTIALLY_PAID', 'PAID', 'CANCELLED'], isArray: true })
+  @ApiOkResponse({ type: [InvoiceOptionDto] })
+  public async invoiceOptions(@Query() getInvoiceOptionsQueryDto: GetInvoiceOptionsQueryDto, @CurrentUser('tenantId') tenantId: string) {
+    return await this.invoiceService.invoiceOptions(getInvoiceOptionsQueryDto, tenantId);
   }
 
   @Get(':invoiceId/download-pdf')

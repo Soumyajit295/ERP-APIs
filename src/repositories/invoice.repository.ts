@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
-import { createInvoiceDto, GetInvoiceQueryDto, InvoiceDashboardDto, InvoiceItems, InvoiceItemsDto, InvoiceListResponseDto, InvoicePaginatedResponseDto, updateInvoiceDto } from "src/common/dto/invoice.dto";
+import { createInvoiceDto, GetInvoiceQueryDto, GetInvoiceOptionsQueryDto, InvoiceDashboardDto, InvoiceItems, InvoiceItemsDto, InvoiceListResponseDto, InvoicePaginatedResponseDto, updateInvoiceDto } from "src/common/dto/invoice.dto";
 import { DatabaseService } from "src/database/database.service";
 import { CustomerRepository } from "./customer.repository";
 import { SalesOrdresRepository } from "./salesOrder.repository";
@@ -411,6 +411,36 @@ export class InvoiceRepository {
 
         } catch (error) {
             throw new InternalServerErrorException('Internal server error while fetching invoice opf sales order')
+        }
+    }
+
+    async invoiceOptions(getInvoiceOptionsQueryDto: GetInvoiceOptionsQueryDto, tenantId: string){
+        try {
+            const statusParam = getInvoiceOptionsQueryDto?.status?.length
+                ? getInvoiceOptionsQueryDto.status.join(',')
+                : null;
+
+            const query = `
+                SELECT 
+                    i.invoice_number AS label,
+                    i.invoice_id AS value
+                FROM invoices i
+                WHERE i.tenant_id = $1
+                AND i.deleted_at IS NULL
+                AND (
+                    $2::text IS NULL
+                    OR i.status::text = ANY(string_to_array($2, ','))
+                )
+            `;
+
+            const result = await this.databaseService.query(query,[tenantId,statusParam])
+
+            if(result?.rows?.length === 0) return []
+
+            return result?.rows
+
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error while fetching invoice options')
         }
     }
 
