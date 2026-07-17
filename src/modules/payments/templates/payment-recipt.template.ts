@@ -30,6 +30,27 @@ export function buildPaymentReciptHtml(
   const methodClass =
     methodColor[data.paymentMethod] || 'bg-gray-100 text-gray-700';
 
+  const invoiceStatusColor: Record<string, string> = {
+    UNPAID: 'bg-red-100 text-red-700',
+    PARTIALLY_PAID: 'bg-amber-100 text-amber-700',
+    PAID: 'bg-green-100 text-green-700',
+    CANCELLED: 'bg-gray-100 text-gray-500',
+  };
+
+  const poStatusColor: Record<string, string> = {
+    DRAFT: 'bg-gray-100 text-gray-500',
+    PENDING: 'bg-amber-100 text-amber-700',
+    APPROVED: 'bg-blue-100 text-blue-700',
+    RECEIVED: 'bg-green-100 text-green-700',
+    CANCELLED: 'bg-red-100 text-red-700',
+  };
+
+  const paymentStatusColor: Record<string, string> = {
+    UNPAID: 'bg-red-100 text-red-700',
+    PARTIALLY_PAID: 'bg-amber-100 text-amber-700',
+    PAID: 'bg-green-100 text-green-700',
+  };
+
   const directionLabel =
     data.paymentDirection === 'RECEIVED' ? 'Payment Received' : 'Payment Made';
 
@@ -42,6 +63,10 @@ export function buildPaymentReciptHtml(
         <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Related Invoice</h3>
         <div class="bg-gray-50 rounded-lg p-4 space-y-1">
           <p class="text-sm"><span class="text-gray-500 w-28 inline-block">Invoice No.</span> <span class="font-semibold">${data.relatedInvoice.invoiceNumber}</span></p>
+          <p class="text-sm">
+            <span class="text-gray-500 w-28 inline-block">Status:</span>
+            <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold ${invoiceStatusColor[data.relatedInvoice.status] || 'bg-gray-100 text-gray-700'}">${data.relatedInvoice.status}</span>
+          </p>
           <p class="text-sm"><span class="text-gray-500 w-28 inline-block">Issue Date:</span> <span class="font-medium">${new Date(data.relatedInvoice.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span></p>
           <p class="text-sm"><span class="text-gray-500 w-28 inline-block">Due Date:</span> <span class="font-medium">${new Date(data.relatedInvoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span></p>
           <p class="text-sm"><span class="text-gray-500 w-28 inline-block">Total:</span> <span class="font-semibold">${formatCurrency(data.relatedInvoice.totalAmount)}</span></p>
@@ -55,6 +80,10 @@ export function buildPaymentReciptHtml(
         <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Related Purchase Order</h3>
         <div class="bg-gray-50 rounded-lg p-4 space-y-1">
           <p class="text-sm"><span class="text-gray-500 w-28 inline-block">PO No.</span> <span class="font-semibold">${data.relatedPurchaseOrder.purchaseOrderNumber}</span></p>
+          <p class="text-sm">
+            <span class="text-gray-500 w-28 inline-block">Status:</span>
+            <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold ${poStatusColor[data.relatedPurchaseOrder.status] || 'bg-gray-100 text-gray-700'}">${data.relatedPurchaseOrder.status}</span>
+          </p>
           <p class="text-sm"><span class="text-gray-500 w-28 inline-block">Total:</span> <span class="font-semibold">${formatCurrency(data.relatedPurchaseOrder.totalAmount)}</span></p>
           <p class="text-sm"><span class="text-gray-500 w-28 inline-block">Paid:</span> <span class="font-medium text-green-600">${formatCurrency(data.relatedPurchaseOrder.paidAmount)}</span></p>
           <p class="text-sm"><span class="text-gray-500 w-28 inline-block">Balance:</span> <span class="font-medium text-red-600">${formatCurrency(data.relatedPurchaseOrder.balanceAmount)}</span></p>

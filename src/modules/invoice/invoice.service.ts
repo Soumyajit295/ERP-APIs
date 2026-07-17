@@ -1,5 +1,5 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
-import { createInvoiceDto, GetInvoiceQueryDto, updateInvoiceDto } from 'src/common/dto/invoice.dto';
+import { createInvoiceDto, GetInvoiceQueryDto, GetInvoiceOptionsQueryDto, updateInvoiceDto } from 'src/common/dto/invoice.dto';
 import { InvoiceRepository } from 'src/repositories/invoice.repository';
 import { PdfService } from '../pdf/pdf.service';
 import { buildInvoiceHtml } from './templates/invoice.template';
@@ -38,6 +38,10 @@ export class InvoiceService {
 
     public async getInvoiceBySalesOrderId(salesOrderId: string, tenantId: string){
         return await this.invoiceRepository.getInvoiceBySalesOrder(salesOrderId, tenantId)
+    }
+
+    public async invoiceOptions(getInvoiceOptionsQueryDto: GetInvoiceOptionsQueryDto, tenantId: string){
+        return await this.invoiceRepository.invoiceOptions(getInvoiceOptionsQueryDto, tenantId)
     }
 
     public async getInvoiceById(invoiceId: string,tenantId: string){
