@@ -1,8 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
@@ -33,8 +34,13 @@ export class DashboardController {
   @ApiOperation({
     summary: 'Get monthly revenue and order count details for the authenticated tenant',
   })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Filter revenue details by year (defaults to current year)' })
   @ApiOkResponse({ type: DashboardRevenueDetailDto, isArray: true })
-  public async getRevenueDetails(@CurrentUser('tenantId') tenantId: string) {
-    return await this.dashboardService.getRevenueDetails(tenantId)
+  public async getRevenueDetails(
+    @CurrentUser('tenantId') tenantId: string,
+    @Query('year') year?: number,
+  ) {
+    const selectedYear = year ?? new Date().getFullYear();
+    return await this.dashboardService.getRevenueDetails(tenantId, selectedYear)
   }
 }

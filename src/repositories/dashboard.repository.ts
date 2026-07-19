@@ -212,7 +212,7 @@ export class DashboardRepository {
     }
   }
 
-  async getRevenueDetails(tenantId: string) {
+  async getRevenueDetails(tenantId: string, year: number) {
     try {
       const query = `
             WITH revenue AS (
@@ -222,6 +222,7 @@ export class DashboardRepository {
                 FROM payments
                 WHERE tenant_id = $1
                 AND payment_direction = $2
+                AND EXTRACT(YEAR FROM payment_date) = $3
                 GROUP BY EXTRACT(MONTH FROM payment_date)
             ),
             orders AS (
@@ -230,6 +231,7 @@ export class DashboardRepository {
                     COUNT(*) AS orders_count
                 FROM sales_orders
                 WHERE tenant_id = $1
+                AND EXTRACT(YEAR FROM order_date) = $3
                 GROUP BY EXTRACT(MONTH FROM order_date)
             )
 
@@ -246,6 +248,7 @@ export class DashboardRepository {
       const result = await this.databaseService.query(query, [
         tenantId,
         PaymentDirection.RECEIVED,
+        year,
       ]);
 
       return (

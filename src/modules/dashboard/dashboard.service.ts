@@ -9,7 +9,7 @@ export class DashboardService {
     return await this.dashboardRepository.getDashboardData(tenantId);
   }
 
-  async getRevenueDetails(tenantId: string){
-    return await this.dashboardRepository.getRevenueDetails(tenantId)
+  async getRevenueDetails(tenantId: string, year: number){
+    return await this.dashboardRepository.getRevenueDetails(tenantId, year)
   }
 }
