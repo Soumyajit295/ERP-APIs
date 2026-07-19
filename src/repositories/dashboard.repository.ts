@@ -82,13 +82,13 @@ export class DashboardRepository {
 
     const pendingPaymentsQuery = `
             SELECT 
-                COUNT(*) FILTER(
+                COALESCE(SUM(i.balance_amount) FILTER(
                     WHERE DATE_TRUNC('month',i.issue_date) = DATE_TRUNC('month',CURRENT_DATE)
-                ) AS current_month,
+                ), 0) AS current_month,
 
-                COUNT(*) FILTER(
+                COALESCE(SUM(i.balance_amount) FILTER(
                     WHERE DATE_TRUNC('month',i.issue_date) = DATE_TRUNC('month',CURRENT_DATE) - INTERVAL '1 month'
-                ) AS previous_month
+                ), 0) AS previous_month
             FROM invoices i
             WHERE i.tenant_id = $1
             AND i.status = ANY($2::invoice_status_enum[])
