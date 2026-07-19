@@ -251,17 +251,18 @@ export class DashboardRepository {
       return (
         result?.rows?.map((row: any) => this.mapRowToRevenueDetails(row)) ?? []
       );
-    } catch (error) {}
+    } catch (error) {
+      throw new InternalServerErrorException('Internal server error, while fetching revenue details')
+    }
   }
 
   async getDashboardData(tenantId: string) {
-    const [orders, pendingPayments, inventoryValue, revenue, revenueDetails] =
+    const [orders, pendingPayments, inventoryValue, revenue] =
       await Promise.all([
         this.getDashboardOrdersData(tenantId),
         this.getPendingPayment(tenantId),
         this.getInventoryValue(tenantId),
         this.getTotalRevenueCard(tenantId),
-        this.getRevenueDetails(tenantId),
       ]);
 
     return {
@@ -273,7 +274,6 @@ export class DashboardRepository {
       },
       inventoryValue,
       revenue,
-      revenueDetails,
     };
   }
 

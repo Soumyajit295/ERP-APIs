@@ -6,7 +6,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
-import { DashboardResponseDto } from 'src/common/dto/dashboard.dto';
+import {
+  DashboardResponseDto,
+  DashboardRevenueDetailDto,
+} from 'src/common/dto/dashboard.dto';
 import { CurrentUser } from '../auth/currentuser.decorator';
 import type { CurrentUserPayload } from '../auth/types/current-user.type';
 import { SWAGGER_BEARER_AUTH } from 'src/swagger';
@@ -24,5 +27,14 @@ export class DashboardController {
   @ApiOkResponse({ type: DashboardResponseDto })
   public async getDashboardData(@CurrentUser() user: CurrentUserPayload) {
     return await this.dashboardService.getDashboardData(user.tenantId);
+  }
+
+  @Get('revenue-details')
+  @ApiOperation({
+    summary: 'Get monthly revenue and order count details for the authenticated tenant',
+  })
+  @ApiOkResponse({ type: DashboardRevenueDetailDto, isArray: true })
+  public async getRevenueDetails(@CurrentUser('tenantId') tenantId: string) {
+    return await this.dashboardService.getRevenueDetails(tenantId)
   }
 }

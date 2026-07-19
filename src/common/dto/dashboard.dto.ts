@@ -45,7 +45,4 @@ export class DashboardResponseDto {
 
   @ApiProperty({ type: DashboardRevenueCardDto })
   revenue!: DashboardRevenueCardDto;
-
-  @ApiProperty({ type: [DashboardRevenueDetailDto] })
-  revenueDetails!: DashboardRevenueDetailDto[];
 }
