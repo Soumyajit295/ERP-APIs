@@ -56,4 +56,28 @@ export class PermissionRepository {
             throw new InternalServerErrorException('Internal server error')
         }
     }
+
+    async validatePermissions(modules: any,client?: any) {
+        try {
+            for(const mod of modules){
+                const validationQuery = `
+                    SELECT COUNT(*) = $1 AS is_valid
+                    FROM permissions p
+                    WHERE p.module_id = $2
+                        AND p.permission_id = ANY($3::uuid[])
+                        AND p.deleted_at IS NULL 
+                `;
+
+                const datasource = client ? client : this.databaseService
+
+                const result = await datasource.query(validationQuery,[mod.permissions.length,mod.moduleId,mod.permissions])
+
+                if(!result?.rows[0]?.is_valid) return false
+            }
+
+            return true
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error, while validating permissions')
+        }
+    }
 }
