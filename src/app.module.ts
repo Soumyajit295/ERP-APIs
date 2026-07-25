@@ -28,6 +28,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { PdfModule } from './modules/pdf/pdf.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     PaymentsModule,
     FinanceModule,
     DashboardModule,
+    PermissionsModule,
   ],
   controllers: [AppController],
   providers: [

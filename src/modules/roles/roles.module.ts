@@ -5,9 +5,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { RolesService } from './roles.service';
 import { RolesRepository } from 'src/repositories/role.repository';
 import { DatabaseService } from 'src/database/database.service';
+import { PermissionsModule } from '../permissions/permissions.module';
 
 @Module({
-  imports: [JwtModule,AuthModule],
+  imports: [JwtModule,AuthModule,PermissionsModule],
   controllers: [RolesController],
   providers: [RolesService,RolesRepository,DatabaseService]
 })

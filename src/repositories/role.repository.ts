@@ -1,109 +1,112 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
-import { CreateRolesDto } from "src/common/dto/createRole.dto";
-import { GetPermissionQueryDto, PemissionsResponse } from "src/common/dto/role-permissions.dto";
-import { DatabaseService } from "src/database/database.service";
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { CreateRolesDto } from 'src/common/dto/createRole.dto';
+import {
+  GetPermissionQueryDto,
+  PemissionsResponse,
+} from 'src/common/dto/role-permissions.dto';
+import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
 export class RolesRepository {
-    constructor(
-        private readonly databaseService: DatabaseService
-    ){}
-    async getRolesByTenantId(tenantId: string){
-        try {
-            const query = `
-                SELECT * FROM roles r
-                WHERE r.tenant_id = $1 AND r.deleted_at IS null
-                ORDER BY r.created_at ASC
-            `;
+  constructor(private readonly databaseService: DatabaseService) {}
+  async getRolesByTenantId(tenantId: string) {
+    try {
+      const query = `
+        SELECT * FROM roles r
+        WHERE r.tenant_id = $1 AND r.deleted_at IS null
+        ORDER BY r.created_at ASC
+    `;
 
-            const result = await this.databaseService.query(query,[tenantId])
+      const result = await this.databaseService.query(query, [tenantId]);
 
-            if(result.rows.length === 0) return null
+      if (result.rows.length === 0) return null;
 
-            return result.rows.map(role => this.mapRowToRoles(role))
-
-        } catch (error) {
-            throw new InternalServerErrorException('Internal server error, Failed to fetch roles')
-        }
+      return result.rows.map((role) => this.mapRowToRoles(role));
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Internal server error, Failed to fetch roles',
+      );
     }
+  }
 
-    async createRole(tenantId: string, createRoleDto: CreateRolesDto){
-        try {
-            const moduleIds = [...new Set(createRoleDto.moduleIds ?? [])]
+  async createRole(tenantId: string, createRoleDto: CreateRolesDto) {
+    const { roleName, modules } = createRoleDto;
 
-            return await this.databaseService.transaction(async (client) => {
-                const roleQuery = `
-                    INSERT INTO roles(tenant_id,name)
-                    VALUES($1,$2)
-                    RETURNING *
-                `
-                const roleResult = await client.query(roleQuery,[tenantId,createRoleDto.roleName])
+    return await this.databaseService.transaction(async (client) => {
+      const roleQuery = `
+            INSERT INTO roles (tenant_id, name)
+            VALUES ($1, $2)
+            RETURNING id, name, is_active
+        `;
+      const roleResult = await client.query(roleQuery, [tenantId, roleName]);
+      const role = roleResult.rows[0];
 
-                if(roleResult.rows.length === 0) return null
+      if (modules && modules.length > 0) {
+        const allPermissionIds = modules.flatMap((m) => m.permissions);
 
-                const role = roleResult.rows[0]
+        const permissionQuery = `
+            INSERT INTO role_permissions (role_id, per_id, tenant_id)
+                SELECT $1, p.permission_id, $2
+                FROM permissions p
+                WHERE p.permission_id = ANY($3::uuid[])
+                    AND p.deleted_at IS NULL
+            ON CONFLICT (role_id, per_id, tenant_id) DO NOTHING
+        `;
+        await client.query(permissionQuery, [
+          role.id,
+          tenantId,
+          allPermissionIds,
+        ]);
+      }
 
-                if(moduleIds.length > 0){
-                    const moduleQuery = `
-                        INSERT INTO role_permissions(role_id,per_id,tenant_id)
-                        SELECT
-                            $1 AS role_id,
-                            p.permission_id AS per_id,
-                            $2 AS tenant_id
-                        FROM permissions p
-                        WHERE p.module_id = ANY($3::UUID[]) AND p.deleted_at IS NULL            
-                    `;
+      return this.mapRowToRoles(role);
+    });
+  }
 
-                    await client.query(moduleQuery,[role.id,tenantId,moduleIds])
-                }
-                return role;       
-            })
-        } catch (error) {
-            if(error instanceof BadRequestException){
-                throw error
-            }
-            console.log(error)
-            throw new InternalServerErrorException('Internal server error, unable to create role')
-        }
-    }
-
-    async deleteRole(roleId: string){
-        try {
-            const query = `
+  async deleteRole(roleId: string) {
+    try {
+      const query = `
                 SELECT * FROM roles r
                 WHERE r.id = $1
             `;
 
-            const result = await this.databaseService.query(query,[roleId])
+      const result = await this.databaseService.query(query, [roleId]);
 
-            if(result.rows.length === 0) return null
+      if (result.rows.length === 0) return null;
 
-            if(result.rows[0].name === 'ADMIN'){
-                throw new BadRequestException('ADMIN role cannot be deleted')
-            }
+      if (result.rows[0].name === 'ADMIN') {
+        throw new BadRequestException('ADMIN role cannot be deleted');
+      }
 
-            const deleteQuery = `
-                UPDATE roles r
-                SET deleted_at = NOW()
-                WHERE r.id = $1
-                RETURNING *
-            `;
+      const deleteQuery = `
+            UPDATE roles r
+            SET deleted_at = NOW()
+            WHERE r.id = $1
+            RETURNING *
+        `;
 
-            const deleteQueryResult = await this.databaseService.query(query,[roleId])
+      const deleteQueryResult = await this.databaseService.query(deleteQuery, [
+        roleId,
+      ]);
 
-            return this.mapRowToRoles(deleteQueryResult.rows[0])
-
-        } catch (error) {
-            if(error instanceof BadRequestException){
-                throw error
-            }
-            throw new InternalServerErrorException('Internal server error, failed to delete role')
-        }
+      return this.mapRowToRoles(deleteQueryResult.rows[0]);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Internal server error, failed to delete role',
+      );
     }
+  }
 
-    async getRoleOptions(tenantId: string){
-        try {
-            const query = `
+  async getRoleOptions(tenantId: string) {
+    try {
+      const query = `
                 SELECT 
                     r.name AS label,
                     r.id AS value
@@ -112,26 +115,28 @@ export class RolesRepository {
                 AND r.tenant_id = $1
             `;
 
-            const result = await this.databaseService.query(query,[tenantId])
+      const result = await this.databaseService.query(query, [tenantId]);
 
-            if(result.rows.length === 0) return []
+      if (result.rows.length === 0) return [];
 
-            return result.rows
-        } catch (error) {
-            throw new InternalServerErrorException('Internal server error while fetching role options')
-        }
+      return result.rows;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Internal server error while fetching role options',
+      );
     }
+  }
 
-    async getPermissionsByRole(
-        getPermissionsQueryDto: GetPermissionQueryDto,
-        tenantId: string,
-        roleId: string
-    ): Promise<PemissionsResponse[]>{
-        try {
-            const { moduleId } = getPermissionsQueryDto
-            const moduleIdParams = moduleId ?? null
+  async getPermissionsByRole(
+    getPermissionsQueryDto: GetPermissionQueryDto,
+    tenantId: string,
+    roleId: string,
+  ): Promise<PemissionsResponse[]> {
+    try {
+      const { moduleId } = getPermissionsQueryDto;
+      const moduleIdParams = moduleId ?? null;
 
-            const query = `
+      const query = `
                 SELECT 
                     m.module_id,
                     m.module_name,
@@ -148,30 +153,32 @@ export class RolesRepository {
                 ORDER BY m.module_name
             `;
 
-            const values = [tenantId,roleId,moduleIdParams]
+      const values = [tenantId, roleId, moduleIdParams];
 
-            const result = await this.databaseService.query(query,values)
+      const result = await this.databaseService.query(query, values);
 
-            return result?.rows?.map((row: any) => this.mapRowPermissions(row)) ?? []
-        } catch (error) {
-            throw new InternalServerErrorException('Internal server error, while fetching permissions')
-        }
+      return result?.rows?.map((row: any) => this.mapRowPermissions(row)) ?? [];
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Internal server error, while fetching permissions',
+      );
     }
+  }
 
-    private mapRowToRoles(row: any){
-        return{
-            roleId: row.id,
-            roleName: row.name,
-            status: row.is_active
-        }
-    }
+  private mapRowToRoles(row: any) {
+    return {
+      roleId: row.id,
+      roleName: row.name,
+      status: row.is_active,
+    };
+  }
 
-    private mapRowPermissions(row: any): PemissionsResponse{
-        return {
-            moduleId: row.module_id,
-            moduleName: row.module_name,
-            permissionId: row.permission_id,
-            permissionName: row.permission_name,
-        }
-    }
+  private mapRowPermissions(row: any): PemissionsResponse {
+    return {
+      moduleId: row.module_id,
+      moduleName: row.module_name,
+      permissionId: row.permission_id,
+      permissionName: row.permission_name,
+    };
+  }
 }
