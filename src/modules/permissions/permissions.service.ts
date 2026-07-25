@@ -10,4 +10,8 @@ export class PermissionsService {
     public async validatePermission(modules: any){
         return await this.permissionRepository.validatePermissions(modules)
     }
+
+    public async getPermissionbyModuleId(moduleId: string){
+        return await this.permissionRepository.getPermissionbyModuleId(moduleId)
+    }
 }
