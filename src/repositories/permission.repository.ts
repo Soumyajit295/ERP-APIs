@@ -80,4 +80,23 @@ export class PermissionRepository {
             throw new InternalServerErrorException('Internal server error, while validating permissions')
         }
     }
+
+    async getPermissionbyModuleId(moduleId: string){
+        try {
+            const query = `
+                SELECT 
+                    p.permission_name AS label,
+                    p.permission_id AS value
+                FROM permissions p
+                WHERE p.module_id = $1
+                AND p.deleted_at IS NULL
+            `;
+
+            const result = await this.databaseService.query(query,[moduleId])
+
+            return result?.rows
+        } catch (error) {
+            throw new InternalServerErrorException('Internal server error, while fetching permissions')
+        }
+    }
 }

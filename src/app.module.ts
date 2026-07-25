@@ -29,6 +29,7 @@ import { FinanceModule } from './modules/finance/finance.module';
 import { PdfModule } from './modules/pdf/pdf.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
+import { TenantModulesModule } from './modules/tenant-modules/tenant-modules.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
     FinanceModule,
     DashboardModule,
     PermissionsModule,
+    TenantModulesModule,
   ],
   controllers: [AppController],
   providers: [
