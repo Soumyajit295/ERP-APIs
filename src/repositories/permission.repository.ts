@@ -1,6 +1,8 @@
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { DatabaseService } from "src/database/database.service";
 import { PoolClient } from "pg";
+import { TogglePermissionDto } from "src/common/dto/permission.dto";
+import { TogglePermission } from "src/common/enums/permission.enum";
 
 @Injectable()
 export class PermissionRepository {
@@ -97,6 +99,84 @@ export class PermissionRepository {
             return result?.rows
         } catch (error) {
             throw new InternalServerErrorException('Internal server error, while fetching permissions')
+        }
+    }
+
+    async togglePermission(payload: TogglePermissionDto,tenantId: string,roleId: string){
+        try {
+            const {action,permissionId} = payload
+
+            if(action === TogglePermission.ASSIGN){
+                const query = `
+                    SELECT rp.rp_id FROM role_permissions rp
+                    WHERE rp.tenant_id = $1
+                    AND rp.role_id = $2
+                    AND rp.per_id = $3
+                    AND rp.deleted_at IS NULL
+                `;
+
+                const result = await this.databaseService.query(query,[tenantId,roleId,permissionId])
+
+                if(result?.rows?.length > 0){
+                    return {message: 'Permission already assigned'}
+                }
+
+                const softDeleteQuery = `
+                    SELECT rp.rp_id FROM role_permissions rp
+                    WHERE rp.tenant_id = $1
+                    AND rp.role_id = $2
+                    AND rp.per_id = $3
+                    AND rp.deleted_at IS NOT NULL
+                `;
+
+                const softDeleteResult = await this.databaseService.query(softDeleteQuery,[tenantId,roleId,permissionId])
+
+                if(softDeleteResult?.rows?.length > 0){
+                    const query = `
+                        UPDATE role_permissions
+                        SET deleted_at = NULL
+                        WHERE rp_id = $1
+                        AND tenant_id = $2
+                    `;
+
+                    await this.databaseService.query(query,[softDeleteResult?.rows[0]?.rp_id,tenantId])
+
+                    return {message: 'Permission reactivated successfully'}
+                } else {
+                    const query = `
+                        INSERT INTO role_permissions(role_id,per_id,tenant_id)
+                        VALUES($1,$2,$3)
+                        RETURNING rp_id
+                    `;
+
+                    const result = await this.databaseService.query(query,[roleId,permissionId,tenantId])
+
+                    if(result?.rows?.length > 0){
+                        return {message: 'Permission assigned successfully'}
+                    }
+
+                    return {message: 'Failed to assign permission'}
+                }
+            } else {
+                const query = `
+                    UPDATE role_permissions
+                    SET deleted_at = NOW()
+                    WHERE tenant_id = $1
+                    AND role_id = $2
+                    AND per_id = $3
+                    AND deleted_at IS NULL
+                    RETURNING rp_id
+                `;
+                const result = await this.databaseService.query(query,[tenantId,roleId,permissionId])
+
+                if(result?.rows?.length > 0){
+                    return {message: 'Permission removed successfully'}
+                }
+
+                return {message: 'Permission not found or already removed'}
+            }
+        } catch (error) {
+            throw new InternalServerErrorException(`Internal server error , while toggling the permission`)
         }
     }
 }
